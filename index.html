@@ -262,7 +262,7 @@ form.add input.n,form.add select{flex:0 1 130px}
     </div>
     <div class="sub c">Magal Seydina Al Hassan Salam · 34<sup>e</sup> édition 2027 à Diourbel</div>
     <div class="row1" style="justify-content:center">
-      <div class="hbtns"><button class="btn sun" type="button" id="recap">Copier le récap WhatsApp</button><button class="btn ghost" type="button" id="btnAdmin">Connexion trésorière</button></div>
+      <div class="hbtns"><button class="btn sun" type="button" id="recap">Copier le récap WhatsApp</button><button class="btn ghost" type="button" id="btnMaj">🔄 Actualiser</button><button class="btn ghost" type="button" id="btnAdmin">Connexion trésorière</button></div>
     </div>
     <div class="mnav">
       <button type="button" id="prev" aria-label="Mois précédent">‹</button>
@@ -478,7 +478,12 @@ function gs(fn,...a){
 function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''}))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r));S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
-async function save(fn,ok){try{await fn();if(ok)toast(ok);return true}catch(e){
+let gen=0,lect=0;
+// local : change tout de suite l'écran (ex. retirer un élément supprimé) avant la réponse du serveur
+async function save(fn,ok,local){gen++;const avant=local?JSON.stringify({membres:S.membres,pay:S.pay,vers:S.vers,jay:S.jay,dep:S.dep,reu:S.reu}):null;
+  if(local){try{local();render()}catch(_){}}
+  try{await fn();gen++;if(ok)toast(ok);setTimeout(()=>charger(),2500);return true}catch(e){gen++;
+  if(avant){try{Object.assign(S,JSON.parse(avant));render()}catch(_){}}
   if(/SESSION/.test(e.message)){sortir();status('Session expirée : reconnectez-vous comme trésorière.')}
   else status('Enregistrement impossible ('+(e&&e.message||e)+'). Réessayez.');return false}}
 
@@ -544,8 +549,9 @@ function renderFiche(){if(!fiche)return;const m=S.membres.find(x=>x.id===fiche);
   const fa=$('#fAdd');if(fa)fa.onclick=()=>{$('#ovFiche').hidden=true;askPay(m.id)};
 }
 function annuler(vid){const v=S.vers.find(x=>x.id===vid);if(!v)return;
-  if(S.nouveau)save(api('annulerVersement',vid),'Versement annulé');
-  else save(api('annulerPaiement',v.membre,v.mois),'Versement annulé')}
+  const local=()=>{S.vers=S.nouveau?S.vers.filter(x=>x.id!==vid):S.vers.filter(x=>!(x.membre===v.membre&&x.mois===v.mois));if(!S.nouveau)delete S.pay[v.membre+'__'+v.mois]};
+  if(S.nouveau)save(api('annulerVersement',vid),'Versement annulé',local);
+  else save(api('annulerPaiement',v.membre,v.mois),'Versement annulé',local)}
 function releve(m){const t=totalDe(m.id),V=versDe(m.id).slice().reverse();
   return [`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL}`,'',`👤 *${m.nom}*`,'',...(V.length?V.map(v=>`✅ ${N(v.montant)} F · ${mLong(v.mois)}${v.date?' (le '+fd(v.date)+')':''}`):['Aucun versement pour l\'instant.']),'',`💰 Total donné : *${F(t)}* sur ${F(OBJ)}`,t>=OBJ?'👏 Part complète, jërëjëf !':`⏳ Reste : ${F(OBJ-t)}`,'',`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`].join('\n')}
 $('#fClose').onclick=()=>{$('#ovFiche').hidden=true;fiche=null};
@@ -563,7 +569,7 @@ function renderJay(){
     (J.length?J.map(j=>`<div class="line"><span class="jt ${j.type==='Somme'?'s':j.type==='Matériel'?'m':'a'}">${j.type==='Somme'?'💰':j.type==='Matériel'?'📦':'🎁'}</span><div class="g"><b>${esc(j.donateur)}</b><small>${fd(j.date)} · ${esc(j.type)}${j.description?' · '+esc(j.description):''}</small></div>${+j.montant?`<span class="num">${N(j.montant)} F</span>`:''}${S.write?`<button class="btn link" type="button" data-jd="${esc(j.id)}">Supprimer</button>`:''}</div>`).join(''):'<div class="empty">Aucun don pour l\'instant.</div>');
   document.querySelectorAll('#jayList [data-jd]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Supprimer'}},4000);return}
-    const j=(S.jay||[]).find(x=>x.id===b.dataset.jd);save(api(j&&j.src==='r'?'supprimerReunion':'supprimerJayante',b.dataset.jd),'Don supprimé')});
+    const j=(S.jay||[]).find(x=>x.id===b.dataset.jd);const id=b.dataset.jd;save(api(j&&j.src==='r'?'supprimerReunion':'supprimerJayante',id),'Don supprimé',()=>{S.jay=S.jay.filter(x=>x.id!==id)})});
 }
 $('#jType').onchange=()=>{const s=$('#jType').value==='Somme';$('#jMt').placeholder=s?'Montant (F)':'Valeur (facultatif)'};
 $('#fJay').onsubmit=e=>{e.preventDefault();const don=$('#jDon').value.trim().replace(/\s+/g,' '),ty=$('#jType').value,v=Math.round(+$('#jMt').value)||0,de=$('#jDesc').value.trim();
@@ -628,14 +634,14 @@ function render(){
   $('#memList').innerHTML=M.length?M.map(m=>{const t=totalDe(m.id);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}${N(t)} F donnés · ${etat(t)}</small></div>${S.write?`<button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:''}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
   document.querySelectorAll('#memList [data-del]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Retirer'}},4000);return}
-    save(api('retirerMembre',b.dataset.del),'Membre retiré')});
+    const id=b.dataset.del;save(api('retirerMembre',id),'Membre retiré',()=>{S.membres=S.membres.filter(x=>x.id!==id)})});
   // dépenses
   $('#depTot').textContent=dep?F(dep):'';
   const D=S.dep.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   $('#depList').innerHTML=D.length?D.map(d=>`<div class="line"><div class="g"><b>${esc(d.motif)}</b><small>${fd(d.date)}</small></div><span class="num">${N(d.montant)} F</span>${S.write?`<button class="btn link" type="button" data-dd="${esc(d.id)}">Supprimer</button>`:''}</div>`).join(''):'<div class="empty">Aucune dépense. Chaque dépense est retirée de la caisse.</div>';
   document.querySelectorAll('#depList [data-dd]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';return}
-    save(api('supprimerDepense',b.dataset.dd),'Dépense supprimée')});
+    const id=b.dataset.dd;save(api('supprimerDepense',id),'Dépense supprimée',()=>{S.dep=S.dep.filter(x=>x.id!==id)})});
 }
 $('#q').oninput=e=>{S.q=e.target.value;render()};
 
@@ -666,7 +672,7 @@ function renderRoute(){
   document.querySelectorAll('#reuList [data-ri]').forEach(b=>b.onclick=()=>{const r=S.reu.find(x=>x.id===b.dataset.ri);if(r)imageReunion(r)});
   document.querySelectorAll('#reuList [data-rd]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Supprimer'}},4000);return}
-    save(api('supprimerReunion',b.dataset.rd),'Réunion supprimée')});
+    const id=b.dataset.rd;save(api('supprimerReunion',id),'Réunion supprimée',()=>{S.reu=S.reu.filter(x=>x.id!==id)})});
 }
 function ptAdd(v){const L=$('#rPtsL'),n=L.children.length+1;if(n>8)return;const d=document.createElement('div');d.className='pt';
   d.innerHTML=`<b>${n})</b><input placeholder="Point ${n}" maxlength="150" autocomplete="off">`;d.querySelector('input').value=v||'';L.appendChild(d);return d.querySelector('input')}
@@ -866,19 +872,22 @@ $('#fLog').onsubmit=async e=>{e.preventDefault();const c=$('#lgPin').value.trim(
 
 // ---------- données ----------
 let essais=0;
-function charger(){return gs('getData',TOKEN).then(d=>{essais=0;if(/connexion|Chargement|gardées/i.test($('#status').textContent))status('');appliquer(d)}).catch(e=>{
+function charger(){const g=gen,n=++lect;return gs('getData',TOKEN).then(d=>{essais=0;if(/connexion|Chargement|gardées/i.test($('#status').textContent))status('');if(n===lect&&g===gen)appliquer(d)}).catch(e=>{
   essais++;
   if(/lien \/exec|Lien \/exec/.test(e.message)){status(e.message);return}
   if(!S.loaded||essais>=3)status(S.loaded?'Connexion instable : les chiffres affichés sont peut-être en retard. Nouvel essai automatique…':'Chargement impossible : vérifiez votre connexion. Nouvel essai automatique…');
   setTimeout(charger,Math.min(30000,4000*essais))})}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&$('#ovPay').hidden)charger()});
 window.addEventListener('online',()=>charger());
+window.addEventListener('focus',()=>{if($('#ovPay').hidden)charger()});
+window.addEventListener('pageshow',()=>charger());
+$('#btnMaj').onclick=async()=>{const b=$('#btnMaj');b.disabled=true;b.textContent='⏳ Mise à jour…';try{await charger()}finally{b.disabled=false;b.textContent='🔄 Actualiser';toast('Données à jour')}};
 try{const c=JSON.parse(localStorage.getItem('sl_data')||'null');if(c){appliquer(c,true);status('Données gardées sur le téléphone : mise à jour en cours…')}}catch(_){}
 render();
 (async()=>{
   if(TOKEN){try{S.write=await gs('verifier',TOKEN)}catch(_){S.write=false}if(!S.write)sortir()}
   await charger();
-  setInterval(()=>{if(document.visibilityState==='visible'&&$('#ovPay').hidden)charger()},30000);
+  setInterval(()=>{if(document.visibilityState==='visible'&&$('#ovPay').hidden)charger()},20000);
 })();
 })();
 if('serviceWorker' in navigator&&location.protocol==='https:'&&!/googleusercontent|script\.google/.test(location.host)){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
