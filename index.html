@@ -115,6 +115,10 @@ details.ko>summary{cursor:pointer;font-weight:700;color:var(--bad);padding:10px 
 .rl.past{opacity:.6}
 details.past>summary{cursor:pointer;color:var(--muted);font-size:13.5px;font-weight:600;padding:8px 0}
 form.add input[type=date],form.add input[type=time]{flex:0 1 150px}
+.pts{flex:1 1 100%;display:flex;flex-direction:column;gap:6px;background:var(--panel2);border-radius:12px;padding:10px 12px}
+.pts .pt{display:flex;align-items:center;gap:8px}.pts .pt b{font-family:var(--f-num);color:var(--deep2);min-width:22px}.pts .pt input{flex:1;min-width:0}
+.pts>.btn{align-self:flex-start}
+ol.rp{margin:4px 0 0;padding-left:20px;font-size:13px;color:var(--ink2)}
 /* trésorière */
 .tres{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;background:var(--sun-soft);border:1px solid var(--sun);border-radius:14px;padding:12px 16px}
 .tres .g{flex:1 1 220px;min-width:0}
@@ -248,7 +252,7 @@ form.add input.n,form.add select{flex:0 1 130px}
         <input id="rDate" type="date" required title="Date de la réunion">
         <input id="rHeure" type="time" title="Heure (facultatif)">
         <input id="rLieu" placeholder="Lieu (ex. : chez Khady Ba, Saint-Louis)" required maxlength="80" autocomplete="off">
-        <input id="rObjet" placeholder="Objet / ordre du jour" maxlength="120" autocomplete="off">
+        <div class="pts" id="rPts"><span class="lab">Points / ordre du jour (facultatif)</span><div id="rPtsL"></div><button class="btn" type="button" id="rPtAdd">＋ Ajouter un point</button></div>
         <button class="btn pri" type="submit">Ajouter la réunion</button>
       </form>
       <div id="reuList"><div class="empty">Chargement…</div></div>
@@ -469,13 +473,13 @@ function render(){
   const ok=A.filter(m=>P(m.id,k)),ko=A.filter(m=>!P(m.id,k));
   $('#kMois').textContent=F(tm);
   $('#kBar').style.width=A.length?(100*ok.length/A.length)+'%':'0';
-  $('#kMoisS').textContent=A.length?`${ok.length} / ${A.length} membres ont payé`:'aucun membre';
+  $('#kMoisS').textContent=A.length?(ok.length?`${ok.length} membre${ok.length>1?'s':''} ${ok.length>1?'ont':'a'} payé`:'personne n\'a encore payé'):'aucun membre';
   $('#kReste').textContent=F(ko.reduce((s,m)=>s+(m.hab||MONTANT),0));
   $('#kResteS').textContent=ko.length?`${ko.length} membre${ko.length>1?'s':''} à relancer`:(A.length?'tout le monde a payé':'aucun membre');
   $('#modeTag').textContent=S.write?'✏️ Vous pouvez modifier':'👁 Consultation seule';
   // tableau : seulement ceux qui ont payé
   $('#tMois').textContent=mLong(k);
-  $('#tSub').textContent=A.length?`${ok.length} membre${ok.length>1?'s':''} sur ${A.length} · ${F(tm)}`:'';
+  $('#tSub').textContent=`${ok.length} membre${ok.length>1?'s':''} ${ok.length>1?'ont':'a'} payé · ${F(tm)}`;
   const q=norm(S.q),T=ok.filter(m=>!q||norm(m.nom).includes(q));
   if(!S.loaded)$('#list').innerHTML='<div class="empty">Chargement…</div>';
   else if(!ok.length)$('#list').innerHTML='<div class="empty">Personne n\'a encore payé pour ce mois.</div>';
@@ -524,28 +528,75 @@ const dObj=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
 const dLong=s=>{const d=dObj(s);return JOURS[d.getDay()]+' '+d.getDate()+' '+MOISL[d.getMonth()]+' '+d.getFullYear()};
 const hLab=h=>h?h.replace(':','h'):'';
 function dansJours(s){const n=Math.round((dObj(s)-dObj(today()))/86400000);return n===0?'Aujourd\'hui':n===1?'Demain':'Dans '+n+' jours'}
-function annonce(r){return [`🌙 *${GROUPE} — ${MAGAL}*`,'',`📢 *Réunion*`,`📅 ${dLong(r.date)}${r.heure?' à '+hLab(r.heure):''}`,`📍 Lieu : ${r.lieu}`,r.objet?`📝 Objet : ${r.objet}`:'','',`Votre présence est vivement souhaitée. Jërëjëf !`].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n')}
+const points=r=>String(r.objet||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+const ptsHtml=r=>{const p=points(r);return p.length?`<ol class="rp">${p.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:''};
+function annonce(r){const p=points(r);return [`🌙 *Réunion Sopey Seydina Al Hassan Salam*`,`Siège ${GROUPE}`,'',`📅 ${dLong(r.date)}${r.heure?' à '+hLab(r.heure):''}`,`📍 Lieu : ${r.lieu}`,p.length?'':'',p.length?`📝 *Points :*`:'',...p.map((x,i)=>`${i+1}) ${x}`),'',`Votre présence est vivement souhaitée. Jërëjëf !`].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n')}
 function renderRoute(){
   if(!S.loaded){$('#reuList').innerHTML='<div class="empty">Chargement…</div>';return}
   const t=today(),R=S.reu.slice().sort((a,b)=>(a.date+a.heure).localeCompare(b.date+b.heure));
   const av=R.filter(r=>r.date>=t),pa=R.filter(r=>r.date<t).reverse();
   $('#reuCount').textContent=av.length?av.length+' à venir':'';
   const del=r=>S.write?`<button class="btn link" type="button" data-rd="${esc(r.id)}">Supprimer</button>`:'';
-  const ligne=(r,past)=>`<div class="rl${past?' past':''}"><span class="d">${fd(r.date)}${r.heure?'<br>'+hLab(r.heure):''}</span><div class="g"><b>${esc(r.lieu)}</b><small>${esc(r.objet||'Réunion')}</small></div>${past?'':`<button class="btn" type="button" data-ra="${esc(r.id)}">Copier l'annonce</button>`}${del(r)}</div>`;
+  const ligne=(r,past)=>`<div class="rl${past?' past':''}"><span class="d">${fd(r.date)}${r.heure?'<br>'+hLab(r.heure):''}</span><div class="g"><b>${esc(r.lieu)}</b>${ptsHtml(r)}</div>${past?'':`<button class="btn sun" type="button" data-ri="${esc(r.id)}">📷 Image</button><button class="btn" type="button" data-ra="${esc(r.id)}">Copier l'annonce</button>`}${del(r)}</div>`;
   let h='';
   if(av.length){const n=av[0],d=dObj(n.date);
-    h+=`<div class="next"><div class="cal"><i>${['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'][d.getMonth()]}</i><b>${d.getDate()}</b></div><div class="g"><span class="soon">Prochaine réunion · ${dansJours(n.date)}</span><b>${esc(dLong(n.date))}${n.heure?' à '+hLab(n.heure):''}</b><small>📍 ${esc(n.lieu)}${n.objet?' · '+esc(n.objet):''}</small></div><button class="btn pri" type="button" data-ra="${esc(n.id)}">Copier l'annonce</button>${del(n)}</div>`;
+    h+=`<div class="next"><div class="cal"><i>${['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'][d.getMonth()]}</i><b>${d.getDate()}</b></div><div class="g"><span class="soon">Prochaine réunion · ${dansJours(n.date)}</span><b>${esc(dLong(n.date))}${n.heure?' à '+hLab(n.heure):''}</b><small>📍 ${esc(n.lieu)}</small>${ptsHtml(n)}</div><button class="btn sun" type="button" data-ri="${esc(n.id)}">📷 Image à partager</button><button class="btn pri" type="button" data-ra="${esc(n.id)}">Copier l'annonce</button>${del(n)}</div>`;
     h+=av.slice(1).map(r=>ligne(r,false)).join('');
   } else h+=`<div class="empty">Aucune réunion prévue pour l'instant.${S.write?'<br>Ajoutez la prochaine réunion ci-dessus.':''}</div>`;
   if(pa.length)h+=`<details class="past"><summary>Réunions passées (${pa.length})</summary>${pa.map(r=>ligne(r,true)).join('')}</details>`;
   $('#reuList').innerHTML=h;
   document.querySelectorAll('#reuList [data-ra]').forEach(b=>b.onclick=()=>{const r=S.reu.find(x=>x.id===b.dataset.ra);if(r)copier(annonce(r),'Annonce copiée : collez-la dans le groupe WhatsApp')});
+  document.querySelectorAll('#reuList [data-ri]').forEach(b=>b.onclick=()=>{const r=S.reu.find(x=>x.id===b.dataset.ri);if(r)imageReunion(r)});
   document.querySelectorAll('#reuList [data-rd]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Supprimer'}},4000);return}
     save(api('supprimerReunion',b.dataset.rd),'Réunion supprimée')});
 }
-$('#fReu').onsubmit=e=>{e.preventDefault();const d=$('#rDate').value,h=$('#rHeure').value,l=$('#rLieu').value.trim(),o=$('#rObjet').value.trim();if(!d||!l)return;
-  $('#rDate').value='';$('#rHeure').value='';$('#rLieu').value='';$('#rObjet').value='';save(api('ajouterReunion',d,h,l,o),'Réunion ajoutée')};
+function ptAdd(v){const L=$('#rPtsL'),n=L.children.length+1;if(n>8)return;const d=document.createElement('div');d.className='pt';
+  d.innerHTML=`<b>${n})</b><input placeholder="Point ${n}" maxlength="150" autocomplete="off">`;d.querySelector('input').value=v||'';L.appendChild(d);return d.querySelector('input')}
+function ptReset(){$('#rPtsL').innerHTML='';ptAdd()}
+ptReset();
+$('#rPtAdd').onclick=()=>{const i=ptAdd();if(i)i.focus();else toast('8 points au maximum')};
+$('#fReu').onsubmit=async e=>{e.preventDefault();const d=$('#rDate').value,h=$('#rHeure').value,l=$('#rLieu').value.trim();if(!d||!l)return;
+  const pts=[...document.querySelectorAll('#rPtsL input')].map(i=>i.value.trim().replace(/\s+/g,' ')).filter(Boolean),o=pts.join('\n');
+  $('#rDate').value='';$('#rHeure').value='';$('#rLieu').value='';ptReset();
+  if(await save(api('ajouterReunion',d,h,l,o),'Réunion ajoutée')){
+    const r=S.reu.filter(x=>x.date===d&&x.lieu===l).pop();
+    if(r&&String(r.objet||'').length<o.length)status('Attention : les points sont trop longs, une partie a été coupée. Écrivez des points plus courts (environ 120 caractères en tout), puis supprimez et refaites la réunion.')}};
+
+// ---------- image de la réunion (à partager) ----------
+function lignesTexte(c,t,max){const mots=String(t).split(/\s+/),L=[];let cur='';mots.forEach(w=>{const x=cur?cur+' '+w:w;if(c.measureText(x).width>max&&cur){L.push(cur);cur=w}else cur=x});if(cur)L.push(cur);return L}
+function ajuster(c,t,poids,taille,min,max,fam){let s=taille;for(;s>min;s-=2){c.font=`${poids} ${s}px ${fam}`;if(c.measureText(t).width<=max)break}c.font=`${poids} ${s}px ${fam}`;return s}
+async function imageReunion(r){
+  try{await document.fonts.ready}catch(_){}
+  const ban=$('#banner');try{if(!ban.complete)await new Promise(x=>{ban.onload=x;ban.onerror=x})}catch(_){}
+  const cv=$('#cvT');let c=cv.getContext('2d');const W=1080,FAM='"Bricolage Grotesque","Public Sans",sans-serif',PF='"Public Sans",sans-serif';
+  const p=points(r),BX=60,BW=W-120,NX=BX+40,TX=BX+110,TW=BW-150;
+  c.font=`800 38px ${PF}`;const PL=p.map(x=>lignesTexte(c,x.toUpperCase(),TW));
+  const nl=PL.reduce((s,l)=>s+l.length,0),boxH=p.length?90+nl*48+(p.length-1)*18+14:0;
+  const IMG=620,H=IMG+330+(p.length?boxH+40:0)+40;
+  cv.width=W;cv.height=H;c=cv.getContext('2d');
+  c.fillStyle='#1f6040';c.fillRect(0,0,W,H);
+  try{c.drawImage(ban,0,0,760,440,0,0,W,W*440/760)}catch(_){}
+  const g=c.createLinearGradient(0,IMG-150,0,IMG+10);g.addColorStop(0,'rgba(31,96,64,0)');g.addColorStop(1,'#1f6040');c.fillStyle=g;c.fillRect(0,IMG-150,W,170);
+  c.textAlign='center';c.fillStyle='#ffffff';c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=8;
+  let y=IMG+20;
+  ajuster(c,'RÉUNION',800,74,40,W-80,FAM);c.fillText('RÉUNION',W/2,y);y+=66;
+  ajuster(c,'SOPEY SEYDINA AL HASSAN SALAM',800,56,30,W-80,FAM);c.fillText('SOPEY SEYDINA AL HASSAN SALAM',W/2,y);y+=26;
+  c.shadowBlur=0;c.fillStyle='#ffffff';c.fillRect(90,y,W-180,4);y+=70;c.shadowBlur=8;
+  const dt=dLong(r.date).toUpperCase();ajuster(c,dt,800,58,30,W-80,FAM);c.fillText(dt,W/2,y);y+=72;
+  const lh=(r.heure?'À '+hLab(r.heure).toUpperCase()+' • ':'')+String(r.lieu).toUpperCase();
+  c.fillStyle='#f5d33f';const s=ajuster(c,lh,800,56,34,W-80,FAM);
+  if(c.measureText(lh).width>W-80){const L=lignesTexte(c,lh,W-80).slice(0,2);L.forEach((x,i)=>c.fillText(x,W/2,y+i*(s+6)))}else c.fillText(lh,W/2,y);
+  c.shadowBlur=0;y=IMG+330;
+  if(p.length){
+    c.fillStyle='#ffffff';rrect(c,BX,y,BW,boxH,34);c.fill();c.strokeStyle='#2e8b4f';c.lineWidth=5;c.stroke();
+    c.font=`800 40px ${FAM}`;const pw=c.measureText('POINTS :').width+70;c.fillStyle='#1f6040';rrect(c,W/2-pw/2,y-30,pw,62,31);c.fill();
+    c.fillStyle='#ffffff';c.fillText('POINTS :',W/2,y+15);
+    c.textAlign='left';let yy=y+90;
+    PL.forEach((L,i)=>{c.fillStyle='#111111';c.font=`800 38px ${PF}`;c.fillText((i+1)+')',NX,yy);L.forEach((x,j)=>c.fillText(x,TX,yy+j*48));yy+=L.length*48+18});
+  }
+  c.textAlign='left';
+  nomImage='reunion-'+r.date+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()}
 
 // ---------- paiement ----------
 function askPay(mid,mode,km){const m=S.membres.find(x=>x.id===mid);if(!m)return;const kk=km||S.mois;pending={mid,mode,k:kk};
@@ -591,7 +642,6 @@ async function dessiner(m,p,k){
   c.fillStyle='#36533f';c.font='500 17px "Public Sans", sans-serif';
   c.fillText('Jërëjëf pour votre cotisation au Magal 2027.',70,y+172);
   c.fillText('Prochaine cotisation : '+mLab(addM(k,1))+' · '+NUMERO+' ('+TRESORIERE+')',70,y+200);
-  c.fillStyle='#5f7d68';c.font='500 14px "Public Sans", sans-serif';c.fillText('Conçu et développé par Abdoukhadre Boye',70,H-58);
   return cv;
 }
 function texteRecu(m,p,k){const md=MD(p);
@@ -614,7 +664,7 @@ $('#copyNum').onclick=()=>copier(NUMERO.replace(/\s/g,''),'Numéro copié');
 $('#prev').onclick=()=>{S.mois=addM(S.mois,-1);render()};
 $('#next').onclick=()=>{S.mois=addM(S.mois,1);render()};
 $('#recap').onclick=()=>{const k=S.mois,A=S.membres.filter(m=>concerne(m,k)),ok=A.filter(m=>P(m.id,k)),ko=A.filter(m=>!P(m.id,k));
-  const t=[`🌙 *${GROUPE} — ${MAGAL}*`,`34e édition à Diourbel`,'',`📅 Cotisations de *${mLong(k)}*`,'',`✅ Ont payé (${ok.length}/${A.length}) :`]
+  const t=[`🌙 *${GROUPE} — ${MAGAL}*`,`34e édition à Diourbel`,'',`📅 Cotisations de *${mLong(k)}*`,'',`✅ Ont payé (${ok.length}) :`]
     .concat(ok.length?ok.map((m,i)=>`${i+1}. ${m.nom} : ${N(P(m.id,k).montant)} F`):['• personne pour l\'instant'],
       ['',`Arrêtée à la somme de *${F(totalMois(k))}*`],
       ['',`⏳ Pas encore payé (${ko.length}) :`],ko.length?ko.map(m=>'• '+m.nom):['• tout le monde a payé 👏'],
@@ -633,7 +683,7 @@ $('#tPhoto').src=$('#photoSeydina').src;
 async function dessinerTableau(){
   try{await document.fonts.ready}catch(_){}
   const k=S.mois,A=S.membres.filter(m=>concerne(m,k)),ok=A.filter(m=>P(m.id,k));
-  const W=1080,RH=58,top=420,H=top+70+Math.max(1,ok.length)*RH+250;
+  const W=1080,RH=58,top=420,H=top+70+Math.max(1,ok.length)*RH+215;
   const cv=$('#cvT'),c=cv.getContext('2d');cv.width=W;cv.height=H;
   c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);
   c.fillStyle='#ffffff';rrect(c,30,30,W-60,H-60,28);c.fill();
@@ -649,7 +699,7 @@ async function dessinerTableau(){
   c.fillStyle='#ffffff';c.font='800 40px "Bricolage Grotesque", sans-serif';c.fillText('SOPPEY SEYDINA AL HASSAN SALAM',W/2,256);
   c.fillStyle='#e9b730';c.font='800 26px "Bricolage Grotesque", sans-serif';c.fillText('SIÈGE SAINT-LOUIS',W/2,294);
   c.fillStyle='#d2f0dc';c.font='600 22px "Public Sans", sans-serif';
-  c.fillText('Cotisations de '+mLong(k)+' · '+ok.length+' / '+A.length+' membres ont payé',W/2,340);
+  c.fillText('Cotisations de '+mLong(k)+' · '+ok.length+' membre'+(ok.length>1?'s ont':' a')+' payé',W/2,340);
   c.textAlign='left';
   // en-tête du tableau
   const X0=70,X1=150,X2=W-420,X3=W-80,y0=top;
@@ -671,11 +721,11 @@ async function dessinerTableau(){
   c.fillStyle='#e9b730';c.font='600 34px "IBM Plex Mono", monospace';c.textAlign='right';c.fillText(F(totalMois(k)),X3,y+54);c.textAlign='left';
   y+=120;c.fillStyle='#36533f';c.font='500 20px "Public Sans", sans-serif';
   c.fillText('📲 Cotisation : '+N(MONTANT)+' F minimum · '+NUMERO+' (Wave / Orange Money) – '+TRESORIERE,X0,y);
-  c.fillStyle='#5f7d68';c.font='500 16px "Public Sans", sans-serif';c.fillText('Conçu et développé par Abdoukhadre Boye',X0,H-56);
   return cv}
-$('#tImg').onclick=async()=>{const cv=await dessinerTableau();$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()};
+let nomImage='';
+$('#tImg').onclick=async()=>{const cv=await dessinerTableau();nomImage='ont-paye-saint-louis-'+S.mois+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()};
 $('#tabClose').onclick=()=>{$('#ovTab').hidden=true};
-$('#tabDl').onclick=()=>{const a=document.createElement('a');a.href=$('#cvT').toDataURL('image/png');a.download='ont-paye-saint-louis-'+S.mois+'.png';document.body.appendChild(a);a.click();a.remove();toast('Image téléchargée (sinon : appui long sur l\'image)')};
+$('#tabDl').onclick=()=>{const a=document.createElement('a');a.href=$('#cvT').toDataURL('image/png');a.download=nomImage||'image.png';document.body.appendChild(a);a.click();a.remove();toast('Image téléchargée (sinon : appui long sur l\'image)')};
 
 // ---------- connexion trésorière ----------
 function majBtn(){$('#btnAdmin').textContent=S.write?'Se déconnecter':'Connexion trésorière'}
