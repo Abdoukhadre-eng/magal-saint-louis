@@ -100,6 +100,39 @@ table.pt{width:100%;border-collapse:collapse;font-size:14px}
 @media (max-width:560px){.pt .dt,.pt .md{display:none}.pt .mm{display:block!important}.pt td,.pt th{padding:8px 6px}.tphoto{width:56px;height:56px}}
 details.ko{margin-top:12px;border:1px dashed var(--coral);border-radius:12px;padding:0 12px}
 details.ko>summary{cursor:pointer;font-weight:700;color:var(--bad);padding:10px 0}
+.kpi.k4{background:var(--sun-soft);border-color:var(--sun)}.k4 .v{color:var(--sun-ink)}
+@media (prefers-color-scheme:dark){.k4 .v{color:var(--sun)}}
+@media (max-width:560px){.k4{grid-column:auto}}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;position:sticky;top:6px;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.tabs button{border:0;background:none;border-radius:10px;padding:10px 4px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink2)}
+.tabs button.on{background:var(--deep);color:#fff}
+@media (max-width:420px){.tabs button{font-size:12px;padding:9px 2px}}
+.big1{width:100%;padding:12px;font-size:15px;margin-top:10px}
+.hint{font-size:12.5px;color:var(--muted);padding-top:8px}
+.obar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-top:5px;border:1px solid var(--line)}
+.obar i{display:block;height:100%;background:linear-gradient(90deg,var(--deep2),var(--accent));border-radius:99px}
+.obar i.full{background:linear-gradient(90deg,var(--accent),var(--sun))}
+.obar.big{height:14px}
+.okav{background:var(--ok)!important;color:#fff!important}.okt{color:var(--ok);font-weight:700}
+.stot small{color:var(--muted)}
+.box.jay{border-top-color:var(--sun)}.box.recap{border-top-color:var(--deep2)}
+.jsum,.rgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.jsum div{background:var(--panel2);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}.jsum b{font-family:var(--f-num);font-size:17px}
+.jt{width:36px;height:36px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px}
+.jt.s{background:var(--ok-soft)}.jt.m{background:var(--sun-soft)}.jt.a{background:var(--panel2)}
+form#fJay select{flex:0 1 170px}
+.rgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.rc{border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;border:1px solid var(--line);border-left-width:5px}
+.rc b{font-family:var(--f-num);font-size:clamp(17px,3.4vw,22px)}.rc small{color:var(--ink2);font-size:12.5px}
+.rc.c1{border-left-color:var(--accent)}.rc.c2{border-left-color:var(--sun)}.rc.c3{border-left-color:var(--coral)}.rc.c4{border-left-color:var(--deep);background:var(--accent-soft)}
+.objg{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;background:var(--panel2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.objg .g{flex:1 1 200px}.objg b{display:block;font-family:var(--f-num);font-size:18px}.objg b small{font-size:13px;color:var(--muted)}
+.objg .pc{font-family:var(--f-display);font-size:26px;font-weight:800;color:var(--deep2)}
+.objg>small{color:var(--ink2);font-size:13px}
+.modes{display:flex;gap:6px;flex-wrap:wrap}
+.pm.sel.w,.pm.sel.w:hover{background:var(--wave)!important;color:#fff}.pm.sel.o,.pm.sel.o:hover{background:var(--om)!important;color:#fff}.pm.sel.c,.pm.sel.c:hover{background:var(--cash)!important;color:#fff}
+.fld select{width:100%;box-sizing:border-box}
+#fMois .btn.pri{width:100%;margin-bottom:6px}
 /* feuille de route */
 .box.route{border-top-color:var(--deep2)}
 .next{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border-radius:12px;padding:12px 14px;margin:12px 0 4px}
@@ -235,7 +268,7 @@ form.add input.n,form.add select{flex:0 1 130px}
       <button type="button" id="prev" aria-label="Mois précédent">‹</button>
       <span class="m" id="mLab">—</span>
       <button type="button" id="next" aria-label="Mois suivant">›</button>
-      <span class="tag">1 600 FCFA / mois minimum</span>
+      <span class="tag">Part de chaque membre : 13 500 F</span>
       <span class="tag" id="modeTag" style="background:rgba(255,255,255,.18);color:var(--on-deep)"></span>
     </div>
   </header>
@@ -261,29 +294,63 @@ form.add input.n,form.add select{flex:0 1 130px}
 
   <div class="status" id="status" hidden></div>
 
-  <section class="kpis" aria-label="Chiffres du mois">
-    <div class="kpi k1"><span class="lab">En caisse</span><span class="v" id="kCaisse">—</span><span class="s" id="kCaisseS">total reçu</span></div>
-    <div class="kpi k2"><span class="lab">Reçu ce mois</span><span class="v" id="kMois">—</span><div class="bar"><i id="kBar" style="width:0"></i></div><span class="s" id="kMoisS"></span></div>
-    <div class="kpi k3"><span class="lab">Reste attendu</span><span class="v" id="kReste">—</span><span class="s" id="kResteS">ce mois</span></div>
+  <section class="kpis" aria-label="Chiffres">
+    <div class="kpi k1"><span class="lab">En caisse</span><span class="v" id="kCaisse">—</span><span class="s" id="kCaisseS"></span></div>
+    <div class="kpi k2"><span class="lab">Reçu ce mois</span><span class="v" id="kMois">—</span><span class="s" id="kMoisS"></span></div>
+    <div class="kpi k4"><span class="lab">Jayante</span><span class="v" id="kJay">—</span><span class="s" id="kJayS"></span></div>
   </section>
 
-  <section class="box tab" aria-labelledby="tList">
+  <nav class="tabs" role="tablist" aria-label="Rubriques">
+    <button type="button" role="tab" data-tab="mois" class="on">📅 Ce mois</button>
+    <button type="button" role="tab" data-tab="suivi">👥 Suivi</button>
+    <button type="button" role="tab" data-tab="jay">🎁 Jayante</button>
+    <button type="button" role="tab" data-tab="recap">📊 Récapitulatif</button>
+  </nav>
+
+  <!-- CE MOIS -->
+  <section class="box tab" data-pane="mois" aria-labelledby="tList">
     <div class="tabhead">
       <img class="tphoto" id="tPhoto" alt="Seydina Al Hassan Salam">
       <div class="g"><span class="lab">Liste des cotisations</span><h2 id="tList">Ont payé · <span id="tMois">—</span></h2><small id="tSub"></small></div>
       <button class="btn sun" type="button" id="tImg">📷 Image du tableau</button>
     </div>
     <div class="bb">
+      <button class="btn pri big1" type="button" id="btnVers" hidden>＋ Enregistrer un versement</button>
       <input class="search" id="q" type="search" placeholder="Chercher un membre…" autocomplete="off">
       <div id="list"><div class="empty">Chargement…</div></div>
-      <details class="ko" id="gKo" hidden><summary id="koT">Pas encore payé</summary><div id="koList"></div></details>
-      <div class="lab" id="listHelp" style="text-transform:none;letter-spacing:0;font-weight:500;padding-top:8px"></div>
+      <div class="hint">Touchez un nom pour voir tout ce qu'il a donné.</div>
     </div>
   </section>
 
-  <section class="box suivi" aria-labelledby="tSuivi">
-    <div class="bh"><h2 id="tSuivi">Suivi de chaque membre</h2><span class="lab">Touchez un membre pour sa fiche</span></div>
-    <div class="bb" id="suivi"><div class="empty">Chargement…</div></div>
+  <!-- SUIVI -->
+  <section class="box suivi" data-pane="suivi" hidden aria-labelledby="tSuivi">
+    <div class="bh"><h2 id="tSuivi">Suivi de chaque membre</h2><span class="lab" id="suiviLab"></span></div>
+    <div class="bb">
+      <input class="search" id="q2" type="search" placeholder="Chercher un membre…" autocomplete="off">
+      <div id="suivi"><div class="empty">Chargement…</div></div>
+    </div>
+  </section>
+
+  <!-- JAYANTE -->
+  <section class="box jay" data-pane="jay" hidden aria-labelledby="tJay">
+    <div class="bh"><h2 id="tJay">Jayante · dons</h2><button class="btn" type="button" id="jayCopy">Copier la liste</button></div>
+    <div class="bb">
+      <form class="add" id="fJay" hidden>
+        <input id="jDon" placeholder="Donateur (nom)" required maxlength="60" autocomplete="off" list="dlMem">
+        <select id="jType" title="Type de don"><option value="Somme">💰 Somme d'argent</option><option value="Matériel">📦 Matériel</option><option value="Autre">🎁 Autre</option></select>
+        <input id="jMt" class="n" type="number" min="1" step="1" inputmode="numeric" placeholder="Montant (F)">
+        <input id="jDesc" placeholder="Description (ex. : 5 sacs de riz)" maxlength="120" autocomplete="off">
+        <button class="btn pri" type="submit">Ajouter</button>
+      </form>
+      <datalist id="dlMem"></datalist>
+      <div id="jayList"><div class="empty">Chargement…</div></div>
+    </div>
+  </section>
+
+  <!-- RÉCAP -->
+  <section class="box recap" data-pane="recap" hidden aria-labelledby="tRecap">
+    <div class="bh"><h2 id="tRecap">Récapitulatif général</h2><button class="btn sun" type="button" id="recapAll">Copier le récapitulatif</button></div>
+    <div class="bb" id="recapBox"><div class="empty">Chargement…</div></div>
   </section>
 
   <details class="box" id="gMem">
@@ -292,9 +359,7 @@ form.add input.n,form.add select{flex:0 1 130px}
       <form class="add" id="fMem" hidden>
         <input id="mNom" placeholder="Prénom et nom" required maxlength="60" autocomplete="off">
         <input id="mTel" class="n" placeholder="Téléphone" maxlength="20" inputmode="tel" autocomplete="off">
-        <input id="mHab" class="n" type="number" min="1" step="1" placeholder="Montant / mois" value="1600" title="Montant habituel par mois">
-        <select id="mDep" title="Membre à partir de"></select>
-        <button class="btn pri" type="submit">Ajouter</button>
+        <button class="btn pri" type="submit">Ajouter le membre</button>
       </form>
       <div id="memList"></div>
     </div>
@@ -315,14 +380,17 @@ form.add input.n,form.add select{flex:0 1 130px}
   <div class="foot">Conçu et développé par Abdoukhadre Boye</div>
 </div>
 
-<!-- paiement -->
+<!-- versement -->
 <div class="ov" id="ovPay" hidden>
   <form class="dlg" id="fPay" role="dialog" aria-modal="true" aria-labelledby="cT">
-    <div><div class="lab" id="cSub"></div><h2 id="cT"></h2></div>
+    <div><div class="lab">Trésorière</div><h2 id="cT">Enregistrer un versement</h2></div>
+    <label class="fld" for="cMem">Membre<select id="cMem" required></select></label>
+    <div class="lab" id="cInfo" style="text-transform:none;letter-spacing:0;font-weight:500;font-size:13px"></div>
     <label class="fld" for="cMt">Montant reçu (FCFA)<input id="cMt" class="big" type="number" min="1" step="1" inputmode="numeric" required></label>
     <div class="quick" id="cQuick"></div>
-    <div id="cMode"></div>
-    <div class="acts"><button class="btn" type="button" id="cNo">Retour</button><button class="btn pri" type="submit">Confirmer le paiement</button></div>
+    <div class="fld">Mode de paiement<div class="modes" id="cModes"></div></div>
+    <label class="fld" for="cMois">Mois<select id="cMois"></select></label>
+    <div class="acts"><button class="btn" type="button" id="cNo">Retour</button><button class="btn pri" type="submit">Confirmer</button></div>
   </form>
 </div>
 <!-- reçu -->
@@ -390,7 +458,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const ini=n=>String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 
-const S={mois:CUR<DEBUT?DEBUT:CUR,membres:[],pay:{},dep:[],reu:[],write:false,loaded:false,q:''};
+const S={mois:CUR<DEBUT?DEBUT:CUR,membres:[],pay:{},vers:[],jay:null,nouveau:false,dep:[],reu:[],write:false,loaded:false,q:'',q2:''};
 let pending=null,recu=null,TOKEN='';
 try{TOKEN=localStorage.getItem('sl_tok')||''}catch(_){}
 
@@ -407,7 +475,7 @@ function gs(fn,...a){
       .then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||'Réponse invalide');return j.data})}
   return new Promise((res,rej)=>{
   google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||String(e))))[fn](...a)})}
-function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''}))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.dep=d.dep||[];S.reu=d.reu||[];S.loaded=true;render()}
+function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''}))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.jay=Array.isArray(d.jay)?d.jay:null;S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];S.reu=d.reu||[];S.loaded=true;render()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
 async function save(fn,ok){try{await fn();if(ok)toast(ok);return true}catch(e){
@@ -416,99 +484,144 @@ async function save(fn,ok){try{await fn();if(ok)toast(ok);return true}catch(e){
 
 const P=(mid,k)=>S.pay[mid+'__'+k];
 const numero=m=>pad(S.membres.indexOf(m)+1);
-const depuis=m=>m.depuis||DEBUT;
-const concerne=(m,k)=>depuis(m)<=k||!!P(m.id,k); // le membre doit-il cotiser ce mois ?
-function retard(m){let n=0;for(let k=depuis(m);k<=CUR;k=addM(k,1))if(!P(m.id,k))n++;return n}
-function totalMois(k){let t=0;Object.values(S.pay).forEach(p=>{if(p.mois===k)t+=+p.montant||0});return t}
-function totalRecu(){let t=0;Object.values(S.pay).forEach(p=>t+=+p.montant||0);return t}
+const OBJ=13500; // part de chaque membre pour l'année
+// versements : liste détaillée (nouveau Code.gs) ou un par mois (ancien Code.gs)
+function versements(d){
+  if(Array.isArray(d.vers))return d.vers.map(v=>Object.assign({},v,{montant:+v.montant||0}));
+  return Object.values(d.pay||{}).map(p=>Object.assign({},p,{id:p.membre+'__'+p.mois,montant:+p.montant||0}));
+}
+const versDe=mid=>S.vers.filter(v=>v.membre===mid).sort((a,b)=>(b.mois+b.date).localeCompare(a.mois+a.date));
+const totalDe=mid=>S.vers.reduce((s,v)=>s+(v.membre===mid?v.montant:0),0);
+const versMois=k=>S.vers.filter(v=>v.mois===k);
+function totalMois(k){return versMois(k).reduce((s,v)=>s+v.montant,0)}
+function totalRecu(){return S.vers.reduce((s,v)=>s+v.montant,0)}
 function totalDep(){return S.dep.reduce((s,d)=>s+(+d.montant||0),0)}
+const jaySommes=()=>(S.jay||[]).filter(j=>j.type==='Somme').reduce((s,j)=>s+(+j.montant||0),0);
+const jayMat=()=>(S.jay||[]).filter(j=>j.type!=='Somme');
+const caisse=()=>totalRecu()+jaySommes()-totalDep();
+// un membre dans le mois : total + versements
+function payesMois(k){const o={};versMois(k).forEach(v=>{(o[v.membre]=o[v.membre]||{mid:v.membre,total:0,l:[]});o[v.membre].total+=v.montant;o[v.membre].l.push(v)});
+  return S.membres.filter(m=>o[m.id]).map(m=>Object.assign(o[m.id],{m})).concat(Object.values(o).filter(x=>!x.m).map(x=>Object.assign(x,{m:{id:x.mid,nom:x.l[0].nom||'?'}})))}
+const pl=(n,a,b)=>n>1?b:a;
 
-function moisSuivi(){let fin=CUR<DEBUT?DEBUT:CUR;Object.values(S.pay).forEach(p=>{if(p.mois>fin)fin=p.mois});const o=[];for(let k=DEBUT;k<=fin;k=addM(k,1))o.push(k);return o}
-function bilan(m){const ms=moisSuivi();let verse=0,payes=0,dus=0;
-  ms.forEach(k=>{const p=P(m.id,k);if(p){verse+=+p.montant||0;payes++}if(k<=CUR&&k>=depuis(m))dus++});
-  const ret=retard(m);return {ms,verse,payes,dus,ret,doit:ret*(m.hab||MONTANT)}}
+// ---------- onglets ----------
+S.tab='mois';
+document.querySelectorAll('.tabs [data-tab]').forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;
+  document.querySelectorAll('.tabs [data-tab]').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==S.tab)});
 
 // ---------- suivi ----------
-function renderSuivi(){const M=S.membres;
+function barre(t){const p=Math.min(100,Math.round(100*t/OBJ));return `<div class="obar"><i style="width:${p}%"${t>=OBJ?' class="full"':''}></i></div>`}
+function etat(t){return t>=OBJ?(t>OBJ?`✓ Part complète · +${N(t-OBJ)} F`:'✓ Part complète'):`Reste ${N(OBJ-t)} F`}
+function renderSuivi(){const M=S.membres,q=norm(S.q2);
+  $('#suiviLab').textContent=`Part de chaque membre : ${N(OBJ)} F`;
   if(!S.loaded){$('#suivi').innerHTML='<div class="empty">Chargement…</div>';return}
   if(!M.length){$('#suivi').innerHTML='<div class="empty">Aucun membre.</div>';return}
-  $('#suivi').innerHTML=M.map(m=>{const b=bilan(m);
-    const dots=b.ms.map(k=>{const p=P(m.id,k);if(p){const md=MD(p);return `<span class="dot ${md.c}" title="${esc(mLong(k)+' : '+N(p.montant)+' F ('+md.l+')')}"></span>`}
-      if(k<depuis(m))return `<span class="dot av0" title="${esc(mLong(k)+' : pas encore membre')}"></span>`;
-      return `<span class="dot ${k<=CUR?'due':'fut'}" title="${esc(mLong(k)+' : '+(k<=CUR?'non payé':'à venir'))}"></span>`}).join('');
-    return `<div class="srow" role="button" tabindex="0" data-f="${esc(m.id)}"><div class="who"><span class="av">${esc(ini(m.nom))}</span><div style="min-width:0"><b>${esc(m.nom)}</b><small${b.ret?' class="late"':''}>${b.ret?`${b.ret} mois non payé${b.ret>1?'s':''}`:'À jour'} · ${N(m.hab||MONTANT)} F / mois</small></div></div>
-      <div class="dots">${dots}</div><div class="stot">${N(b.verse)} F<small style="color:${b.ret?'var(--bad)':'var(--muted)'}">${b.payes}/${b.dus} mois</small></div></div>`}).join('')+
-    `<div class="lab" style="text-transform:none;letter-spacing:0;font-weight:500;padding:8px 6px 0">Un rond par mois depuis septembre 2026 (Magal 2026) : bleu Wave, orange Orange Money, vert Cash, gris mode non noté, rouge pointillé non payé.</div>`;
+  const L=M.filter(m=>!q||norm(m.nom).includes(q));
+  $('#suivi').innerHTML=L.length?L.map(m=>{const t=totalDe(m.id),n=versDe(m.id).length;
+    return `<div class="srow" role="button" tabindex="0" data-f="${esc(m.id)}"><div class="who"><span class="av${t>=OBJ?' okav':''}">${esc(ini(m.nom))}</span><div style="min-width:0;flex:1"><b>${esc(m.nom)}</b><small>${n?n+' '+pl(n,'versement','versements'):'Aucun versement'} · <span class="${t>=OBJ?'okt':''}">${etat(t)}</span></small>${barre(t)}</div></div><div class="stot">${N(t)} F<small>sur ${N(OBJ)} F</small></div></div>`}).join(''):'<div class="empty">Aucun membre ne correspond.</div>';
   document.querySelectorAll('#suivi [data-f]').forEach(r=>{r.onclick=()=>openFiche(r.dataset.f);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openFiche(r.dataset.f)}}});
 }
+$('#q2').oninput=e=>{S.q2=e.target.value;renderSuivi()};
 
 // ---------- fiche ----------
 let fiche=null;
 function openFiche(mid){fiche=mid;renderFiche();$('#ovFiche').hidden=false;$('#fClose').focus()}
 function renderFiche(){if(!fiche)return;const m=S.membres.find(x=>x.id===fiche);if(!m){$('#ovFiche').hidden=true;fiche=null;return}
-  const b=bilan(m);$('#fAv').textContent=ini(m.nom);$('#fT').textContent=m.nom;
-  $('#fSub').textContent=(m.tel?m.tel+' · ':'')+'membre depuis '+mLab(depuis(m))+' · '+N(m.hab||MONTANT)+' F / mois';
-  $('#fStats').innerHTML=`<div class="ok"><span class="lab">Total versé</span><b>${N(b.verse)} F</b></div><div><span class="lab">Mois payés</span><b>${b.payes} / ${b.dus}</b></div><div class="${b.ret?'bad':'ok'}"><span class="lab">Doit</span><b>${N(b.doit)} F</b></div>`;
-  const ms=b.ms.filter(k=>k>=depuis(m)||P(m.id,k));const nxt=addM(ms.length?ms[ms.length-1]:CUR,1);if(nxt<=addM(CUR,11))ms.push(nxt);
-  $('#fMois').innerHTML=ms.slice().reverse().map(k=>{const p=P(m.id,k);
-    if(p){const md=MD(p);return `<div class="fm"><div class="g"><b>${esc(mLong(k))}</b><small>${p.date?'Payé le '+fd(p.date):'Payé'} · N° ${esc(p.recu||'')}</small></div><span class="chip ${md.c}">${md.l}</span><span class="chip ok">✓ ${N(p.montant)} F</span><button class="btn" type="button" data-fr="${k}">Reçu</button></div>`}
-    const st=k<=CUR?'<span class="chip due">Non payé</span>':'<span class="chip" style="background:var(--panel2);color:var(--muted)">À venir</span>';
-    return `<div class="fm"><div class="g"><b>${esc(mLong(k))}</b><small>${k<=CUR?N(m.hab||MONTANT)+' F à payer':'paiement en avance possible'}</small></div>${S.write?`<div class="pay">${Object.keys(MODES).map(x=>`<button class="pm ${MODES[x].c}" type="button" data-fp="${k}" data-mode="${x}">${MODES[x].l}</button>`).join('')}</div>`:st}</div>`}).join('');
-  document.querySelectorAll('#fMois [data-fr]').forEach(x=>x.onclick=()=>{$('#ovFiche').hidden=true;showRecu(fiche,x.dataset.fr)});
-  document.querySelectorAll('#fMois [data-fp]').forEach(x=>x.onclick=()=>{$('#ovFiche').hidden=true;askPay(fiche,x.dataset.mode,x.dataset.fp)});
+  const t=totalDe(m.id),V=versDe(m.id);$('#fAv').textContent=ini(m.nom);$('#fT').textContent=m.nom;
+  $('#fSub').textContent=(m.tel?m.tel+' · ':'')+`part de l'année : ${N(OBJ)} F`;
+  $('#fStats').innerHTML=`<div class="ok"><span class="lab">Total donné</span><b>${N(t)} F</b></div><div><span class="lab">Versements</span><b>${V.length}</b></div><div class="${t>=OBJ?'ok':''}"><span class="lab">${t>=OBJ?'Part complète':'Reste'}</span><b>${t>=OBJ?'✓'+(t>OBJ?' +'+N(t-OBJ):''):N(OBJ-t)+' F'}</b></div>`+`<div style="grid-column:1/-1;background:none;padding:0">${barre(t)}</div>`;
+  $('#fMois').innerHTML=(S.write?`<button class="btn pri" type="button" id="fAdd">＋ Nouveau versement pour ${esc(m.nom)}</button>`:'')+
+    (V.length?V.map(v=>{const md=MD(v);return `<div class="fm"><div class="g"><b>${N(v.montant)} F</b><small>${esc(mLong(v.mois))}${v.date?' · le '+fd(v.date):''}${v.recu?' · N° '+esc(v.recu):''}</small></div><span class="chip ${md.c}">${md.l}</span><button class="btn" type="button" data-fr="${esc(v.id)}">Reçu</button>${S.write?`<button class="btn link" type="button" data-fx="${esc(v.id)}">Annuler</button>`:''}</div>`}).join(''):'<div class="empty">Aucun versement pour l\'instant.</div>');
+  document.querySelectorAll('#fMois [data-fr]').forEach(x=>x.onclick=()=>{$('#ovFiche').hidden=true;showRecu(x.dataset.fr)});
+  document.querySelectorAll('#fMois [data-fx]').forEach(b=>b.onclick=()=>{
+    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Annuler'}},4000);return}
+    annuler(b.dataset.fx)});
+  const fa=$('#fAdd');if(fa)fa.onclick=()=>{$('#ovFiche').hidden=true;askPay(m.id)};
 }
-function releve(m){const b=bilan(m);
-  return [`🌙 *${GROUPE} — ${MAGAL}*`,`Relevé de ${m.nom}`,'',...b.ms.filter(k=>(k<=CUR&&k>=depuis(m))||P(m.id,k)).map(k=>{const p=P(m.id,k);return p?`✅ ${mLong(k)} : ${N(p.montant)} F${p.mode&&MODES[p.mode]?' ('+MODES[p.mode].l+')':''}`:`❌ ${mLong(k)} : non payé`}),'',`💰 Total versé : ${F(b.verse)}`,b.ret?`⏳ Reste à payer : ${F(b.doit)} (${b.ret} mois)`:'👏 À jour, jërëjëf !','',`📲 Envoyer au ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`].join('\n')}
+function annuler(vid){const v=S.vers.find(x=>x.id===vid);if(!v)return;
+  if(S.nouveau)save(api('annulerVersement',vid),'Versement annulé');
+  else save(api('annulerPaiement',v.membre,v.mois),'Versement annulé')}
+function releve(m){const t=totalDe(m.id),V=versDe(m.id).slice().reverse();
+  return [`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL}`,'',`👤 *${m.nom}*`,'',...(V.length?V.map(v=>`✅ ${N(v.montant)} F · ${mLong(v.mois)}${v.date?' (le '+fd(v.date)+')':''}`):['Aucun versement pour l\'instant.']),'',`💰 Total donné : *${F(t)}* sur ${F(OBJ)}`,t>=OBJ?'👏 Part complète, jërëjëf !':`⏳ Reste : ${F(OBJ-t)}`,'',`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`].join('\n')}
 $('#fClose').onclick=()=>{$('#ovFiche').hidden=true;fiche=null};
 $('#fTxt').onclick=()=>{const m=S.membres.find(x=>x.id===fiche);if(m)copier(releve(m),'Relevé copié : collez-le sur WhatsApp')};
 
+// ---------- jayante ----------
+function renderJay(){
+  const J=(S.jay||[]).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  $('#fJay').hidden=!S.write||S.jay===null;
+  $('#dlMem').innerHTML=S.membres.map(m=>`<option value="${esc(m.nom)}">`).join('');
+  if(!S.loaded){$('#jayList').innerHTML='<div class="empty">Chargement…</div>';return}
+  if(S.jay===null){$('#jayList').innerHTML='<div class="empty">Jayante n\'est pas encore activé.<br>Il faut mettre à jour le fichier Code.gs de l\'application.</div>';return}
+  const tot=jaySommes(),mat=jayMat().length;
+  $('#jayList').innerHTML=`<div class="jsum"><div><span class="lab">Sommes reçues</span><b>${F(tot)}</b></div><div><span class="lab">Matériels et autres</span><b>${mat}</b></div><div><span class="lab">Nombre de dons</span><b>${J.length}</b></div></div>`+
+    (J.length?J.map(j=>`<div class="line"><span class="jt ${j.type==='Somme'?'s':j.type==='Matériel'?'m':'a'}">${j.type==='Somme'?'💰':j.type==='Matériel'?'📦':'🎁'}</span><div class="g"><b>${esc(j.donateur)}</b><small>${fd(j.date)} · ${esc(j.type)}${j.description?' · '+esc(j.description):''}</small></div>${+j.montant?`<span class="num">${N(j.montant)} F</span>`:''}${S.write?`<button class="btn link" type="button" data-jd="${esc(j.id)}">Supprimer</button>`:''}</div>`).join(''):'<div class="empty">Aucun don pour l\'instant.</div>');
+  document.querySelectorAll('#jayList [data-jd]').forEach(b=>b.onclick=()=>{
+    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Supprimer'}},4000);return}
+    save(api('supprimerJayante',b.dataset.jd),'Don supprimé')});
+}
+$('#jType').onchange=()=>{const s=$('#jType').value==='Somme';$('#jMt').placeholder=s?'Montant (F)':'Valeur (facultatif)'};
+$('#fJay').onsubmit=e=>{e.preventDefault();const don=$('#jDon').value.trim().replace(/\s+/g,' '),ty=$('#jType').value,v=Math.round(+$('#jMt').value)||0,de=$('#jDesc').value.trim();
+  if(!don)return;if(ty==='Somme'&&!(v>0)){status('Indiquez le montant de la somme reçue.');$('#jMt').focus();return}
+  if(ty!=='Somme'&&!de){status('Décrivez le matériel ou le don (ex. : 5 sacs de riz).');$('#jDesc').focus();return}
+  status('');$('#jDon').value='';$('#jMt').value='';$('#jDesc').value='';
+  save(api('ajouterJayante',don,ty,v,de,today()),'Don ajouté')};
+$('#jayCopy').onclick=()=>{const J=(S.jay||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+  copier([`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`🎁 *Jayante (dons)*`,'',...(J.length?J.map((j,i)=>`${i+1}. ${j.donateur} : ${j.type==='Somme'?N(j.montant)+' F':(j.description||j.type)+(+j.montant?' ('+N(j.montant)+' F)':'')}`):['Aucun don pour l\'instant.']),'',`💰 Total des sommes : *${F(jaySommes())}*`,jayMat().length?`📦 Matériels et autres : ${jayMat().length}`:'','','Jërëjëf à tous les donateurs 🤲'].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n'),'Liste copiée : collez-la sur WhatsApp')};
+
+// ---------- récapitulatif ----------
+function moisListe(){let fin=CUR<DEBUT?DEBUT:CUR;S.vers.forEach(v=>{if(v.mois>fin)fin=v.mois});const o=[];for(let k=DEBUT;k<=fin;k=addM(k,1))o.push(k);return o}
+function renderRecap(){if(!S.loaded){$('#recapBox').innerHTML='<div class="empty">Chargement…</div>';return}
+  const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=totalDep(),obj=M.length*OBJ,donne=new Set(S.vers.map(v=>v.membre)).size,comp=M.filter(m=>totalDe(m.id)>=OBJ).length;
+  const rows=moisListe().map(k=>{const t=totalMois(k),n=new Set(versMois(k).map(v=>v.membre)).size;return {k,t,n}}).filter(r=>r.t||r.k<=CUR);
+  $('#recapBox').innerHTML=`<div class="rgrid">
+    <div class="rc c1"><span class="lab">Cotisations</span><b>${F(cot)}</b><small>${donne} ${pl(donne,'membre a','membres ont')} donné</small></div>
+    <div class="rc c2"><span class="lab">Jayante (sommes)</span><b>${F(jay)}</b><small>${S.jay===null?'pas encore activé':jayMat().length+' matériel(s) / autres dons'}</small></div>
+    <div class="rc c3"><span class="lab">Dépenses</span><b>${F(dep)}</b><small>${S.dep.length} dépense${S.dep.length>1?'s':''}</small></div>
+    <div class="rc c4"><span class="lab">En caisse</span><b>${F(cot+jay-dep)}</b><small>cotisations + jayante − dépenses</small></div>
+  </div>
+  <div class="objg"><div class="g"><span class="lab">Objectif des parts (${M.length} membres × ${N(OBJ)} F)</span><b>${F(cot)} <small>sur ${F(obj)}</small></b></div><div class="pc">${obj?Math.round(100*cot/obj):0} %</div>${`<div style="flex:1 1 100%">${'<div class="obar big"><i style="width:'+(obj?Math.min(100,100*cot/obj):0)+'%"></i></div>'}</div>`}<small style="flex:1 1 100%">${comp} ${pl(comp,'membre a','membres ont')} déjà complété sa part.</small></div>
+  <div class="tw"><table class="pt"><thead><tr><th>Mois</th><th>Membres</th><th class="mt">Cotisations</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="text-transform:capitalize">${esc(mLong(r.k))}</td><td>${r.n}</td><td class="mt">${N(r.t)} F</td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Total</td><td class="mt">${F(cot)}</td></tr></tfoot></table></div>`;
+}
+function texteRecap(){const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=totalDep(),donne=new Set(S.vers.map(v=>v.membre)).size,comp=M.filter(m=>totalDe(m.id)>=OBJ).length;
+  return [`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL} · 34e édition à Diourbel`,'',`📊 *RÉCAPITULATIF GÉNÉRAL*`,'',`💵 Cotisations : *${F(cot)}* (${donne} ${pl(donne,'membre','membres')})`,
+    ...moisListe().filter(k=>totalMois(k)).map(k=>`   • ${mLong(k)} : ${N(totalMois(k))} F`),
+    `🎁 Jayante : *${F(jay)}*${jayMat().length?' + '+jayMat().length+' matériel(s) / autres dons':''}`,dep?`🧾 Dépenses : ${F(dep)}`:'',`💰 *En caisse : ${F(cot+jay-dep)}*`,'',`🎯 Part de chaque membre : ${F(OBJ)} — ${comp} ${pl(comp,'membre a','membres ont')} complété sa part`,'',`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n')}
+$('#recapAll').onclick=()=>copier(texteRecap(),'Récapitulatif copié : collez-le sur WhatsApp');
+
 // ---------- écran principal ----------
 function render(){
-  const k=S.mois,M=S.membres,A=M.filter(m=>concerne(m,k));
+  const k=S.mois,M=S.membres;
   $('#mLab').textContent=mLong(k);
   $('#prev').disabled=k<=DEBUT;$('#next').disabled=k>=addM(CUR,11);
-  const enc=totalRecu(),dep=totalDep(),tm=totalMois(k);
-  $('#kCaisse').textContent=F(enc-dep);
-  $('#kCaisseS').textContent=dep?`${N(enc)} reçus − ${N(dep)} dépensés`:'total reçu depuis septembre 2026';
-  const ok=A.filter(m=>P(m.id,k)),ko=A.filter(m=>!P(m.id,k));
+  const dep=totalDep(),tm=totalMois(k),PM=payesMois(k);
+  $('#kCaisse').textContent=F(caisse());
+  $('#kCaisseS').textContent=`cotisations + jayante${dep?' − dépenses':''}`;
   $('#kMois').textContent=F(tm);
-  $('#kBar').style.width=A.length?(100*ok.length/A.length)+'%':'0';
-  $('#kMoisS').textContent=A.length?(ok.length?`${ok.length} membre${ok.length>1?'s':''} ${ok.length>1?'ont':'a'} payé`:'personne n\'a encore payé'):'aucun membre';
-  $('#kReste').textContent=F(ko.reduce((s,m)=>s+(m.hab||MONTANT),0));
-  $('#kResteS').textContent=ko.length?`${ko.length} membre${ko.length>1?'s':''} à relancer`:(A.length?'tout le monde a payé':'aucun membre');
+  $('#kMoisS').textContent=PM.length?`${PM.length} ${pl(PM.length,'membre a','membres ont')} payé`:'personne pour l\'instant';
+  $('#kJay').textContent=S.jay===null?'—':F(jaySommes());
+  $('#kJayS').textContent=S.jay===null?'pas encore activé':(jayMat().length?`+ ${jayMat().length} matériel(s)`:'dons reçus');
   $('#modeTag').textContent=S.write?'✏️ Vous pouvez modifier':'👁 Consultation seule';
-  // tableau : seulement ceux qui ont payé
+  $('#btnVers').hidden=!S.write;
+  // tableau du mois : seulement ceux qui ont payé
   $('#tMois').textContent=mLong(k);
-  $('#tSub').textContent=`${ok.length} membre${ok.length>1?'s':''} ${ok.length>1?'ont':'a'} payé · ${F(tm)}`;
-  const q=norm(S.q),T=ok.filter(m=>!q||norm(m.nom).includes(q));
+  $('#tSub').textContent=`${PM.length} ${pl(PM.length,'membre a','membres ont')} payé · ${F(tm)}`;
+  const q=norm(S.q),T=PM.filter(x=>!q||norm(x.m.nom).includes(q));
   if(!S.loaded)$('#list').innerHTML='<div class="empty">Chargement…</div>';
-  else if(!ok.length)$('#list').innerHTML='<div class="empty">Personne n\'a encore payé pour ce mois.</div>';
+  else if(!PM.length)$('#list').innerHTML='<div class="empty">Personne n\'a encore payé pour ce mois.</div>';
   else if(!T.length)$('#list').innerHTML='<div class="empty">Aucun membre ne correspond.</div>';
   else $('#list').innerHTML=`<div class="tw"><table class="pt"><thead><tr><th class="n0">N°</th><th>Membre</th><th class="mt">Montant</th><th class="md">Mode</th><th class="dt">Date</th><th class="ac"></th></tr></thead><tbody>`+
-    T.map((m,i)=>{const p=P(m.id,k),md=MD(p);
-      return `<tr><td class="n0">${i+1}</td><td class="nm" data-ff="${esc(m.id)}" title="Voir le suivi de ${esc(m.nom)}">${esc(m.nom)}<small class="mm" style="display:none;font-weight:600;font-size:12px;color:${md.hex}">${md.l}</small></td><td class="mt">${N(p.montant)} F</td><td class="md"><span class="chip ${md.c}">${md.l}</span></td><td class="dt">${p.date?fd(p.date):'—'}</td><td class="ac"><button class="btn" type="button" data-recu="${esc(m.id)}">Reçu</button>${S.write?`<button class="btn link" type="button" data-annul="${esc(m.id)}">Annuler</button>`:''}</td></tr>`}).join('')+
-    `</tbody><tfoot><tr><td colspan="2">Arrêtée à la somme de</td><td class="mt">${F(T.reduce((s,m)=>s+(+P(m.id,k).montant||0),0))}</td><td colspan="3"></td></tr></tfoot></table></div>`;
-  // trésorière : ceux qui n'ont pas encore payé (pour enregistrer)
-  $('#gKo').hidden=!S.write||!S.loaded;
-  const K=ko.filter(m=>!q||norm(m.nom).includes(q));
-  $('#koT').textContent=`Pas encore payé (${ko.length}) · enregistrer un paiement`;
-  $('#koList').innerHTML=K.length?K.map(m=>{const r=retard(m);
-    const sous=k>CUR?'Paiement en avance possible':(r>1&&k===CUR?`<span class="late">${r} mois en retard · ${N(r*(m.hab||MONTANT))} F</span>`:`${N(m.hab||MONTANT)} F attendus`);
-    return `<div class="mem"><div class="who" data-ff="${esc(m.id)}" style="cursor:pointer"><span class="av">${esc(ini(m.nom))}</span><div style="min-width:0"><b>${esc(m.nom)}</b><small>${sous}</small></div></div><div class="pay">${Object.keys(MODES).map(x=>`<button class="pm ${MODES[x].c}" type="button" data-m="${esc(m.id)}" data-mode="${x}">${MODES[x].l}</button>`).join('')}</div></div>`}).join(''):'<div class="empty">Tout le monde a payé 👏</div>';
-  $('#listHelp').textContent=S.write?'Touchez un nom pour voir son suivi. Pour enregistrer un paiement, ouvrez « Pas encore payé ».':'Touchez un nom pour voir son suivi.';
-  document.querySelectorAll('#list [data-ff],#koList [data-ff]').forEach(b=>b.onclick=()=>openFiche(b.dataset.ff));
-  document.querySelectorAll('#koList [data-mode]').forEach(b=>b.onclick=()=>askPay(b.dataset.m,b.dataset.mode));
-  document.querySelectorAll('#list [data-recu]').forEach(b=>b.onclick=()=>showRecu(b.dataset.recu,k));
-  document.querySelectorAll('#list [data-annul]').forEach(b=>b.onclick=()=>{
-    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer l\'annulation';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Annuler'}},4000);return}
-    save(api('annulerPaiement',b.dataset.annul,k),'Paiement annulé')});
-  renderSuivi();renderRoute();if(!$('#ovFiche').hidden)renderFiche();majBtn();
+    T.map((x,i)=>{const v=x.l[x.l.length-1],md=MD(v),plus=x.l.length>1;
+      return `<tr><td class="n0">${i+1}</td><td class="nm" data-ff="${esc(x.mid)}" title="Voir le suivi de ${esc(x.m.nom)}">${esc(x.m.nom)}<small class="mm" style="display:none;font-weight:600;font-size:12px;color:${md.hex}">${plus?x.l.length+' versements':md.l}</small></td><td class="mt">${N(x.total)} F</td><td class="md">${plus?`<span class="chip n">${x.l.length} versements</span>`:`<span class="chip ${md.c}">${md.l}</span>`}</td><td class="dt">${v.date?fd(v.date):'—'}</td><td class="ac">${plus?`<button class="btn" type="button" data-ff="${esc(x.mid)}">Détail</button>`:`<button class="btn" type="button" data-recu="${esc(v.id)}">Reçu</button>`}</td></tr>`}).join('')+
+    `</tbody><tfoot><tr><td colspan="2">Arrêtée à la somme de</td><td class="mt">${F(T.reduce((s,x)=>s+x.total,0))}</td><td colspan="3"></td></tr></tfoot></table></div>`;
+  document.querySelectorAll('#list [data-ff]').forEach(b=>b.onclick=()=>openFiche(b.dataset.ff));
+  document.querySelectorAll('#list [data-recu]').forEach(b=>b.onclick=()=>showRecu(b.dataset.recu));
+  renderSuivi();renderJay();renderRecap();renderRoute();if(!$('#ovFiche').hidden)renderFiche();majBtn();
   // membres
   $('#memCount').textContent=M.length?M.length+' membres':'';
   $('#fMem').hidden=$('#fDep').hidden=$('#fReu').hidden=!S.write;
-  if(S.write&&!$('#mDep').options.length){const o=[];for(let x=DEBUT;x<=addM(CUR,2);x=addM(x,1))o.push(`<option value="${x}"${x===CUR?' selected':''}>depuis ${mLab(x)}</option>`);$('#mDep').innerHTML=o.join('')}
-  $('#memList').innerHTML=M.length?M.map(m=>{const r=retard(m);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}depuis ${mLab(depuis(m))} · ${r?`${r} mois non payé${r>1?'s':''}`:'à jour'}</small></div>${S.write?`<input class="hab" type="number" min="1" step="1" value="${m.hab||MONTANT}" data-hab="${esc(m.id)}" title="Montant habituel par mois"><button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:`<span class="num">${N(m.hab||MONTANT)} F</span>`}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
-  document.querySelectorAll('#memList [data-hab]').forEach(i=>i.onchange=()=>{const v=Math.round(+i.value);if(v>0)save(api('modifierMembre',i.dataset.hab,v),'Montant mis à jour')});
+  $('#memList').innerHTML=M.length?M.map(m=>{const t=totalDe(m.id);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}${N(t)} F donnés · ${etat(t)}</small></div>${S.write?`<button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:''}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
   document.querySelectorAll('#memList [data-del]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Retirer'}},4000);return}
     save(api('retirerMembre',b.dataset.del),'Membre retiré')});
@@ -598,18 +711,30 @@ async function imageReunion(r){
   c.textAlign='left';
   nomImage='reunion-'+r.date+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()}
 
-// ---------- paiement ----------
-function askPay(mid,mode,km){const m=S.membres.find(x=>x.id===mid);if(!m)return;const kk=km||S.mois;pending={mid,mode,k:kk};
-  $('#cSub').textContent='Cotisation de '+mLong(kk);$('#cT').textContent=m.nom;
-  $('#cMt').value=m.hab||MONTANT;
-  $('#cQuick').innerHTML=[...new Set([m.hab||MONTANT,1600,2000,3200,5000])].map(v=>`<button type="button" data-v="${v}">${N(v)}</button>`).join('');
+// ---------- versement ----------
+let modeChoisi='wave';
+function askPay(mid){
+  $('#cMem').innerHTML='<option value="">— Choisir le membre —</option>'+S.membres.slice().sort((a,b)=>a.nom.localeCompare(b.nom,'fr')).map(m=>`<option value="${esc(m.id)}"${m.id===mid?' selected':''}>${esc(m.nom)}</option>`).join('');
+  const o=[];for(let x=DEBUT;x<=addM(CUR,11);x=addM(x,1))o.push(`<option value="${x}"${x===(S.mois)?' selected':''}>${mLong(x)}</option>`);$('#cMois').innerHTML=o.join('');
+  $('#cMt').value='';
+  $('#cQuick').innerHTML=[1600,2000,3000,5000,OBJ].map(v=>`<button type="button" data-v="${v}">${N(v)}</button>`).join('');
   document.querySelectorAll('#cQuick [data-v]').forEach(b=>b.onclick=()=>{$('#cMt').value=b.dataset.v});
-  const md=MODES[mode];$('#cMode').innerHTML=`Payé par <span class="chip ${md.c}">${md.l}</span> aujourd'hui (${fd(today())})`;
-  $('#ovPay').hidden=false;$('#cMt').focus();$('#cMt').select()}
-$('#cNo').onclick=()=>{$('#ovPay').hidden=true;pending=null};
-$('#fPay').onsubmit=async e=>{e.preventDefault();if(!pending)return;const v=Math.round(+$('#cMt').value);if(!(v>0)){$('#cMt').focus();return}
-  const {mid,mode,k}=pending;pending=null;$('#ovPay').hidden=true;const m=S.membres.find(x=>x.id===mid);
-  if(await save(api('payer',mid,k,mode,v,today()),`${m.nom} : ${N(v)} F reçus par ${MODES[mode].l}`))showRecu(mid,k)};
+  modeChoisi='wave';majModes();infoMembre();
+  $('#ovPay').hidden=false;(mid?$('#cMt'):$('#cMem')).focus()}
+function majModes(){$('#cModes').innerHTML=Object.keys(MODES).map(x=>`<button type="button" class="pm ${MODES[x].c}${x===modeChoisi?' sel':''}" data-md="${x}">${MODES[x].l}</button>`).join('');
+  document.querySelectorAll('#cModes [data-md]').forEach(b=>b.onclick=()=>{modeChoisi=b.dataset.md;majModes()})}
+function infoMembre(){const mid=$('#cMem').value;if(!mid){$('#cInfo').textContent='';return}const t=totalDe(mid);$('#cInfo').textContent=`Déjà donné : ${N(t)} F · ${etat(t)}`}
+$('#cMem').onchange=infoMembre;
+$('#btnVers').onclick=()=>askPay('');
+$('#cNo').onclick=()=>{$('#ovPay').hidden=true};
+$('#fPay').onsubmit=async e=>{e.preventDefault();const mid=$('#cMem').value,v=Math.round(+$('#cMt').value),k=$('#cMois').value,mode=modeChoisi;
+  if(!mid){$('#cMem').focus();return}if(!(v>0)){$('#cMt').focus();return}
+  const m=S.membres.find(x=>x.id===mid);$('#ovPay').hidden=true;
+  let fn=api('payer',mid,k,mode,v,today());
+  // ancien Code.gs : un seul enregistrement par mois → on additionne
+  if(!S.nouveau&&P(mid,k)){const avant=+P(mid,k).montant||0;fn=()=>gs('annulerPaiement',TOKEN,mid,k).then(()=>gs('payer',TOKEN,mid,k,mode,avant+v,today())).then(appliquer)}
+  if(await save(fn,`${m.nom} : ${N(v)} F reçus par ${MODES[mode].l}`)){
+    const l=S.vers.filter(x=>x.membre===mid&&x.mois===k).sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(l.length)showRecu(l[l.length-1].id)}};
 
 // ---------- reçu ----------
 function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
@@ -629,7 +754,7 @@ async function dessiner(m,p,k){
   c.fillStyle='#d2f0dc';c.font='600 19px "Public Sans", sans-serif';c.fillText('Magal Seydina Al Hassan Salam · 34e édition 2027',62,180);
   c.fillStyle='#ffffff';c.font='700 19px "Public Sans", sans-serif';c.fillText('REÇU DE COTISATION',62,222);
   c.textAlign='right';c.font='600 19px "IBM Plex Mono", monospace';c.fillText('N° '+(p.recu||PREF+'-'+k.replace('-','')+'-'+numero(m)),W-62,222);c.textAlign='left';
-  const lignes=[['Reçu de',m.nom],['Cotisation du mois de',mLong(k)],['Mode de paiement',md.l],['Date du paiement',p.date?fd(p.date):'—']];
+  const lignes=[['Reçu de',m.nom],['Versement du mois de',mLong(k)],['Mode de paiement',md.l],['Date du paiement',p.date?fd(p.date):'—']];
   let y=340;lignes.forEach(([a,b])=>{c.fillStyle='#5f7d68';c.font='700 17px "Public Sans", sans-serif';c.fillText(a.toUpperCase(),70,y);
     c.fillStyle=a==='Mode de paiement'?md.hex:'#10261a';c.font='600 30px "Public Sans", sans-serif';
     let t=b;while(c.measureText(t).width>W-140&&t.length>4)t=t.slice(0,-2);if(t!==b)t=t.slice(0,-1)+'…';c.fillText(t,70,y+40);
@@ -640,13 +765,14 @@ async function dessiner(m,p,k){
   c.save();c.translate(W-170,y+64);c.rotate(-0.2);c.strokeStyle='#15803d';c.lineWidth=5;rrect(c,-92,-36,184,72,14);c.stroke();
   c.fillStyle='#15803d';c.font='800 40px "Bricolage Grotesque", sans-serif';c.textAlign='center';c.fillText('PAYÉ',0,14);c.restore();c.textAlign='left';
   c.fillStyle='#36533f';c.font='500 17px "Public Sans", sans-serif';
+  const tt=totalDe(m.id);
   c.fillText('Jërëjëf pour votre cotisation au Magal 2027.',70,y+172);
-  c.fillText('Prochaine cotisation : '+mLab(addM(k,1))+' · '+NUMERO+' ('+TRESORIERE+')',70,y+200);
+  c.fillText('Total donné à ce jour : '+N(tt)+' F sur '+N(OBJ)+' F · '+etat(tt),70,y+200);
   return cv;
 }
-function texteRecu(m,p,k){const md=MD(p);
-  return [`🧾 *REÇU DE COTISATION — ${GROUPE}*`,MAGAL+' (34e édition, Diourbel)',`N° ${p.recu||''}`,'',`👤 ${m.nom}`,`📅 Mois : ${mLong(k)}`,`💰 Montant : ${F(p.montant)}`,`💳 Paiement : ${md.l}`,p.date?`🗓️ Payé le : ${fd(p.date)}`:'','','✅ PAYÉ — jërëjëf !',`📲 Prochaine cotisation au ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}`].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n')}
-async function showRecu(mid,k){const m=S.membres.find(x=>x.id===mid),p=P(mid,k);if(!m||!p)return;
+function texteRecu(m,p,k){const md=MD(p),tt=totalDe(m.id);
+  return [`🧾 *REÇU DE COTISATION — ${GROUPE}*`,MAGAL+' (34e édition, Diourbel)',p.recu?`N° ${p.recu}`:'','',`👤 ${m.nom}`,`📅 Mois : ${mLong(k)}`,`💰 Montant : ${F(p.montant)}`,`💳 Paiement : ${md.l}`,p.date?`🗓️ Payé le : ${fd(p.date)}`:'','','✅ PAYÉ — jërëjëf !',`📊 Total donné : ${F(tt)} sur ${F(OBJ)} (${etat(tt)})`].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n')}
+async function showRecu(vid){const p=S.vers.find(x=>x.id===vid);if(!p)return;const m=S.membres.find(x=>x.id===p.membre)||{id:p.membre,nom:p.nom||'?'},k=p.mois;
   recu={m,p,k};const cv=await dessiner(m,p,k);$('#rImg').src=cv.toDataURL('image/png');$('#ovRecu').hidden=false;$('#rClose').focus()}
 $('#rClose').onclick=()=>{$('#ovRecu').hidden=true;recu=null};
 $('#rTxt').onclick=()=>{if(!recu)return;copier(texteRecu(recu.m,recu.p,recu.k),'Texte du reçu copié : collez-le sur WhatsApp')};
@@ -663,18 +789,16 @@ $('#copyNum').onclick=()=>copier(NUMERO.replace(/\s/g,''),'Numéro copié');
 // ---------- navigation et formulaires ----------
 $('#prev').onclick=()=>{S.mois=addM(S.mois,-1);render()};
 $('#next').onclick=()=>{S.mois=addM(S.mois,1);render()};
-$('#recap').onclick=()=>{const k=S.mois,A=S.membres.filter(m=>concerne(m,k)),ok=A.filter(m=>P(m.id,k)),ko=A.filter(m=>!P(m.id,k));
-  const t=[`🌙 *${GROUPE} — ${MAGAL}*`,`34e édition à Diourbel`,'',`📅 Cotisations de *${mLong(k)}*`,'',`✅ Ont payé (${ok.length}) :`]
-    .concat(ok.length?ok.map((m,i)=>`${i+1}. ${m.nom} : ${N(P(m.id,k).montant)} F`):['• personne pour l\'instant'],
-      ['',`Arrêtée à la somme de *${F(totalMois(k))}*`],
-      ['',`⏳ Pas encore payé (${ko.length}) :`],ko.length?ko.map(m=>'• '+m.nom):['• tout le monde a payé 👏'],
-      ['',`💰 Caisse totale : ${F(totalRecu()-totalDep())}`,'',`📲 Cotisation mensuelle ${N(MONTANT)} F minimum, à envoyer au ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`]).join('\n');
+$('#recap').onclick=()=>{const k=S.mois,PM=payesMois(k);
+  const t=[`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL} · 34e édition à Diourbel`,'',`📅 Cotisations de *${mLong(k)}*`,'',`✅ Ont payé (${PM.length}) :`]
+    .concat(PM.length?PM.map((x,i)=>`${i+1}. ${x.m.nom} : ${N(x.total)} F`):['• personne pour l\'instant'],
+      ['',`Arrêtée à la somme de *${F(totalMois(k))}*`,'',`💰 Caisse : ${F(caisse())}`,S.jay&&S.jay.length?`🎁 dont Jayante : ${F(jaySommes())}`:'','',`🎯 Part de chaque membre : ${F(OBJ)} pour l'année, à verser quand vous voulez`,`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`]).filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n');
   copier(t,'Récap copié : collez-le dans le groupe WhatsApp')};
 $('#fMem').onsubmit=e=>{e.preventDefault();const nom=$('#mNom').value.trim().replace(/\s+/g,' ');if(!nom)return;
   if(S.membres.some(m=>m.nom.toLowerCase()===nom.toLowerCase())){status(nom+' est déjà dans la liste.');return}
-  const tel=$('#mTel').value.trim(),hab=Math.round(+$('#mHab').value)||MONTANT,dep=$('#mDep').value;
-  $('#mNom').value='';$('#mTel').value='';$('#mHab').value=MONTANT;status('');
-  save(api('ajouterMembre',nom,tel,hab,dep),nom+' ajouté');$('#mNom').focus()};
+  const tel=$('#mTel').value.trim();
+  $('#mNom').value='';$('#mTel').value='';status('');
+  save(api('ajouterMembre',nom,tel,MONTANT,CUR<DEBUT?DEBUT:CUR),nom+' ajouté');$('#mNom').focus()};
 $('#fDep').onsubmit=e=>{e.preventDefault();const motif=$('#dMotif').value.trim(),v=Math.round(+$('#dMontant').value);if(!motif||!(v>0))return;
   $('#dMotif').value='';$('#dMontant').value='';save(api('ajouterDepense',motif,v),'Dépense ajoutée')};
 
@@ -682,7 +806,7 @@ $('#fDep').onsubmit=e=>{e.preventDefault();const motif=$('#dMotif').value.trim()
 $('#tPhoto').src=$('#photoSeydina').src;
 async function dessinerTableau(){
   try{await document.fonts.ready}catch(_){}
-  const k=S.mois,A=S.membres.filter(m=>concerne(m,k)),ok=A.filter(m=>P(m.id,k));
+  const k=S.mois,ok=payesMois(k);
   const W=1080,RH=58,top=420,H=top+70+Math.max(1,ok.length)*RH+215;
   const cv=$('#cvT'),c=cv.getContext('2d');cv.width=W;cv.height=H;
   c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);
@@ -708,12 +832,12 @@ async function dessinerTableau(){
   c.fillText('N°',X0+4,y0+35);c.fillText('MEMBRE',X1,y0+35);c.fillText('MODE',X2,y0+35);c.textAlign='right';c.fillText('MONTANT',X3,y0+35);c.textAlign='left';
   let y=y0+70;
   if(!ok.length){c.fillStyle='#5f7d68';c.font='500 24px "Public Sans", sans-serif';c.fillText('Personne n\'a encore payé pour ce mois.',X1,y+36);y+=RH}
-  ok.forEach((m,i)=>{const p=P(m.id,k),md=MD(p);
+  ok.forEach((x,i)=>{const m=x.m,p=x.l[x.l.length-1],md=x.l.length>1?{l:x.l.length+' versements',hex:'#6b7d72'}:MD(p);
     if(i%2){c.fillStyle='#f3f9f4';c.fillRect(X0-10,y,W-2*X0+20,RH)}
     c.fillStyle='#5f7d68';c.font='600 20px "IBM Plex Mono", monospace';c.fillText(String(i+1),X0+4,y+37);
     c.fillStyle='#10261a';c.font='600 24px "Public Sans", sans-serif';let t=m.nom;while(c.measureText(t).width>X2-X1-20&&t.length>4)t=t.slice(0,-2);if(t!==m.nom)t=t.slice(0,-1)+'…';c.fillText(t,X1,y+38);
     c.font='700 18px "Public Sans", sans-serif';const lw=c.measureText(md.l).width+28;c.fillStyle=md.hex+'22';rrect(c,X2,y+12,lw,34,17);c.fill();c.fillStyle=md.hex;c.fillText(md.l,X2+14,y+35);
-    c.fillStyle='#14532d';c.font='600 24px "IBM Plex Mono", monospace';c.textAlign='right';c.fillText(N(p.montant)+' F',X3,y+38);c.textAlign='left';
+    c.fillStyle='#14532d';c.font='600 24px "IBM Plex Mono", monospace';c.textAlign='right';c.fillText(N(x.total)+' F',X3,y+38);c.textAlign='left';
     c.strokeStyle='#e1ede4';c.lineWidth=1;c.beginPath();c.moveTo(X0-10,y+RH);c.lineTo(W-X0+10,y+RH);c.stroke();y+=RH});
   // total
   y+=24;c.fillStyle='#14532d';rrect(c,X0-10,y,W-2*X0+20,84,16);c.fill();
