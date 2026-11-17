@@ -339,7 +339,7 @@ form.add input.n,form.add select{flex:0 1 130px}
         <input id="jDon" placeholder="Donateur (nom)" required maxlength="60" autocomplete="off" list="dlMem">
         <select id="jType" title="Type de don"><option value="Somme">💰 Somme d'argent</option><option value="Matériel">📦 Matériel</option><option value="Autre">🎁 Autre</option></select>
         <input id="jMt" class="n" type="number" min="1" step="1" inputmode="numeric" placeholder="Montant (F)">
-        <input id="jDesc" placeholder="Description (ex. : 5 sacs de riz)" maxlength="120" autocomplete="off">
+        <input id="jDesc" placeholder="Description (ex. : 5 sacs de riz)" maxlength="95" autocomplete="off">
         <button class="btn pri" type="submit">Ajouter</button>
       </form>
       <datalist id="dlMem"></datalist>
@@ -475,7 +475,7 @@ function gs(fn,...a){
       .then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||'Réponse invalide');return j.data})}
   return new Promise((res,rej)=>{
   google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||String(e))))[fn](...a)})}
-function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''}))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.jay=Array.isArray(d.jay)?d.jay:null;S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];S.reu=d.reu||[];S.loaded=true;render()}
+function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''}))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r));S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
 async function save(fn,ok){try{await fn();if(ok)toast(ok);return true}catch(e){
@@ -485,6 +485,10 @@ async function save(fn,ok){try{await fn();if(ok)toast(ok);return true}catch(e){
 const P=(mid,k)=>S.pay[mid+'__'+k];
 const numero=m=>pad(S.membres.indexOf(m)+1);
 const OBJ=13500; // part de chaque membre pour l'année
+// Jayante enregistré dans l'onglet « Réunions » (lieu commençant par JAYANTE ·), car le Code.gs ne peut pas être redéployé
+const JMARK='JAYANTE · ';
+function estJay(r){return String(r.lieu||'').indexOf(JMARK)===0}
+function jayDeReu(r){const x=String(r.objet||'').split('|');return {id:r.id,src:'r',date:r.date,donateur:String(r.lieu).slice(JMARK.length),type:['Somme','Matériel','Autre'].includes(x[0])?x[0]:'Autre',montant:+x[1]||0,description:x.slice(2).join('|')}}
 // versements : liste détaillée (nouveau Code.gs) ou un par mois (ancien Code.gs)
 function versements(d){
   if(Array.isArray(d.vers))return d.vers.map(v=>Object.assign({},v,{montant:+v.montant||0}));
@@ -559,14 +563,14 @@ function renderJay(){
     (J.length?J.map(j=>`<div class="line"><span class="jt ${j.type==='Somme'?'s':j.type==='Matériel'?'m':'a'}">${j.type==='Somme'?'💰':j.type==='Matériel'?'📦':'🎁'}</span><div class="g"><b>${esc(j.donateur)}</b><small>${fd(j.date)} · ${esc(j.type)}${j.description?' · '+esc(j.description):''}</small></div>${+j.montant?`<span class="num">${N(j.montant)} F</span>`:''}${S.write?`<button class="btn link" type="button" data-jd="${esc(j.id)}">Supprimer</button>`:''}</div>`).join(''):'<div class="empty">Aucun don pour l\'instant.</div>');
   document.querySelectorAll('#jayList [data-jd]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Supprimer'}},4000);return}
-    save(api('supprimerJayante',b.dataset.jd),'Don supprimé')});
+    const j=(S.jay||[]).find(x=>x.id===b.dataset.jd);save(api(j&&j.src==='r'?'supprimerReunion':'supprimerJayante',b.dataset.jd),'Don supprimé')});
 }
 $('#jType').onchange=()=>{const s=$('#jType').value==='Somme';$('#jMt').placeholder=s?'Montant (F)':'Valeur (facultatif)'};
 $('#fJay').onsubmit=e=>{e.preventDefault();const don=$('#jDon').value.trim().replace(/\s+/g,' '),ty=$('#jType').value,v=Math.round(+$('#jMt').value)||0,de=$('#jDesc').value.trim();
   if(!don)return;if(ty==='Somme'&&!(v>0)){status('Indiquez le montant de la somme reçue.');$('#jMt').focus();return}
   if(ty!=='Somme'&&!de){status('Décrivez le matériel ou le don (ex. : 5 sacs de riz).');$('#jDesc').focus();return}
   status('');$('#jDon').value='';$('#jMt').value='';$('#jDesc').value='';
-  save(api('ajouterJayante',don,ty,v,de,today()),'Don ajouté')};
+  save(api('ajouterReunion',today(),'',(JMARK+don).slice(0,80),[ty,v||'',de.replace(/\|/g,'/')].join('|').slice(0,120)),'Don ajouté')};
 $('#jayCopy').onclick=()=>{const J=(S.jay||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   copier([`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`🎁 *Jayante (dons)*`,'',...(J.length?J.map((j,i)=>`${i+1}. ${j.donateur} : ${j.type==='Somme'?N(j.montant)+' F':(j.description||j.type)+(+j.montant?' ('+N(j.montant)+' F)':'')}`):['Aucun don pour l\'instant.']),'',`💰 Total des sommes : *${F(jaySommes())}*`,jayMat().length?`📦 Matériels et autres : ${jayMat().length}`:'','','Jërëjëf à tous les donateurs 🤲'].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n'),'Liste copiée : collez-la sur WhatsApp')};
 
