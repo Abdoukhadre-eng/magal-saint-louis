@@ -103,10 +103,11 @@ details.ko>summary{cursor:pointer;font-weight:700;color:var(--bad);padding:10px 
 .kpi.k4{background:var(--sun-soft);border-color:var(--sun)}.k4 .v{color:var(--sun-ink)}
 @media (prefers-color-scheme:dark){.k4 .v{color:var(--sun)}}
 @media (max-width:560px){.k4{grid-column:auto}}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;position:sticky;top:6px;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;position:sticky;top:6px;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.06)}
 .tabs button{border:0;background:none;border-radius:10px;padding:10px 4px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink2)}
 .tabs button.on{background:var(--deep);color:#fff}
-@media (max-width:420px){.tabs button{font-size:12px;padding:9px 2px}}
+@media (max-width:420px){.tabs button{font-size:11px;padding:9px 1px}}
+.box.prev{border-top-color:var(--sun)}.ph{font-size:15px;margin:16px 0 6px}#prevBox .pt td .obar{margin-top:6px}#prevBox .pt td .btn{display:block;margin:4px 0 0;padding-left:0}#prevBox .ec{display:block;margin-top:4px;font-size:12.5px;font-weight:600}#pType{min-width:0}
 .big1{width:100%;padding:12px;font-size:15px;margin-top:10px}
 .hint{font-size:12.5px;color:var(--muted);padding-top:8px}
 .obar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-top:5px;border:1px solid var(--line)}
@@ -304,7 +305,8 @@ form.add input.n,form.add select{flex:0 1 130px}
     <button type="button" role="tab" data-tab="mois" class="on">📅 Ce mois</button>
     <button type="button" role="tab" data-tab="suivi">👥 Suivi</button>
     <button type="button" role="tab" data-tab="jay">🎁 Jayante</button>
-    <button type="button" role="tab" data-tab="recap">📊 Récapitulatif</button>
+    <button type="button" role="tab" data-tab="recap">📊 Récap</button>
+    <button type="button" role="tab" data-tab="prev">🎯 Prévision</button>
   </nav>
 
   <!-- CE MOIS -->
@@ -353,6 +355,22 @@ form.add input.n,form.add select{flex:0 1 130px}
     <div class="bb" id="recapBox"><div class="empty">Chargement…</div></div>
   </section>
 
+  <!-- PRÉVISION -->
+  <section class="box prev" data-pane="prev" hidden aria-labelledby="tPrev">
+    <div class="bh"><h2 id="tPrev">Prévision du Magal</h2><button class="btn sun" type="button" id="prevCopy">Copier la prévision</button></div>
+    <div class="bb">
+      <div class="hint" style="margin-top:0">Avant le Magal, on écrit ce qu'on prévoit. L'application compare avec ce qui est vraiment reçu et dépensé, et montre l'écart.</div>
+      <form class="add" id="fPrev" hidden>
+        <select id="pType" title="Type"><option value="D">🧾 Dépense prévue</option><option value="R">🎁 Jayante prévu</option></select>
+        <input id="pPoste" placeholder="Poste (ex. : Transport, Nourriture…)" required maxlength="40" autocomplete="off" list="dlPostes">
+        <input id="pMt" class="n" type="number" min="0" step="1" inputmode="numeric" placeholder="Montant prévu (F)" required>
+        <button class="btn pri" type="submit">Enregistrer</button>
+      </form>
+      <datalist id="dlPostes"></datalist>
+      <div id="prevBox"><div class="empty">Chargement…</div></div>
+    </div>
+  </section>
+
   <details class="box" id="gMem">
     <summary>Membres <span class="lab" id="memCount" style="margin-left:auto"></span></summary>
     <div class="bb">
@@ -371,6 +389,7 @@ form.add input.n,form.add select{flex:0 1 130px}
     <summary>Dépenses <span class="lab num" id="depTot" style="margin-left:auto"></span></summary>
     <div class="bb">
       <form class="add" id="fDep" hidden>
+        <select id="dPoste" title="Poste prévu"><option value="">— Poste (facultatif) —</option></select>
         <input id="dMotif" placeholder="Motif de la dépense" required maxlength="80" autocomplete="off">
         <input id="dMontant" class="n" type="number" min="1" step="1" placeholder="Montant" required>
         <button class="btn pri" type="submit">Ajouter</button>
@@ -478,7 +497,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const ini=n=>String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 
-const S={prof:{},mois:CUR<DEBUT?DEBUT:CUR,membres:[],pay:{},vers:[],jay:null,nouveau:false,dep:[],reu:[],write:false,loaded:false,q:'',q2:''};
+const S={prof:{},prev:[],mois:CUR<DEBUT?DEBUT:CUR,membres:[],pay:{},vers:[],jay:null,nouveau:false,dep:[],reu:[],write:false,loaded:false,q:'',q2:''};
 let pending=null,recu=null,TOKEN='';
 try{TOKEN=localStorage.getItem('sl_tok')||''}catch(_){}
 
@@ -495,7 +514,7 @@ function gs(fn,...a){
       .then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||'Réponse invalide');return j.data})}
   return new Promise((res,rej)=>{
   google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||String(e))))[fn](...a)})}
-function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r));S.prof=profils(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render()}
+function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r)&&!estPrev(r));S.prof=profils(R);S.prev=previsions(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
 let gen=0,lect=0;
@@ -515,6 +534,11 @@ const JMARK='JAYANTE · ';
 function estJay(r){return String(r.lieu||'').indexOf(JMARK)===0}
 // Profils des membres (prénom, nom, téléphone, adresse) : aussi dans l'onglet « Réunions » (lieu commençant par PROFIL ·)
 const PMARK='PROFIL · ';
+// Prévisions du Magal : aussi dans l'onglet « Réunions » (lieu commençant par PREVU ·, objet « D|montant » ou « R|montant »)
+const VMARK='PREVU · ';
+function estPrev(r){return String(r.lieu||'').indexOf(VMARK)===0}
+function previsions(R){const o={};R.filter(estPrev).forEach(r=>{const x=String(r.objet||'').split('|'),poste=String(r.lieu).slice(VMARK.length).trim(),t=x[0]==='R'?'R':'D',k=t+'|'+norm(poste);
+  o[k]={rid:r.id,rids:(o[k]?o[k].rids:[]).concat(r.id),poste,type:t,montant:+x[1]||0}});return Object.values(o)}
 function estProf(r){return String(r.lieu||'').indexOf(PMARK)===0}
 function profils(R){const o={};R.filter(estProf).forEach(r=>{const x=String(r.objet||'').split('|');o[String(r.lieu).slice(PMARK.length)]={rid:r.id,prenom:x[0]||'',nom:x[1]||'',tel:x[2]||'',adresse:x.slice(3).join('|')}});return o}
 function jayDeReu(r){const x=String(r.objet||'').split('|');return {id:r.id,src:'r',date:r.date,donateur:String(r.lieu).slice(JMARK.length),type:['Somme','Matériel','Autre'].includes(x[0])?x[0]:'Autre',montant:+x[1]||0,description:x.slice(2).join('|')}}
@@ -652,7 +676,7 @@ function render(){
     `</tbody><tfoot><tr><td colspan="2">Arrêtée à la somme de</td><td class="mt">${F(T.reduce((s,x)=>s+x.total,0))}</td><td colspan="3"></td></tr></tfoot></table></div>`;
   document.querySelectorAll('#list [data-ff]').forEach(b=>b.onclick=()=>openFiche(b.dataset.ff));
   document.querySelectorAll('#list [data-recu]').forEach(b=>b.onclick=()=>showRecu(b.dataset.recu));
-  renderSuivi();renderJay();renderRecap();renderRoute();if(!$('#ovFiche').hidden)renderFiche();majBtn();
+  renderSuivi();renderJay();renderRecap();renderPrev();renderRoute();if(!$('#ovFiche').hidden)renderFiche();majBtn();
   // membres
   $('#memCount').textContent=M.length?M.length+' membres':'';
   $('#fMem').hidden=$('#fDep').hidden=$('#fReu').hidden=!S.write;
@@ -838,7 +862,7 @@ $('#fMem').onsubmit=async e=>{e.preventDefault();const pre=net($('#mPre').value)
   if(await save(api('ajouterMembre',nom,tel,MONTANT,CUR<DEBUT?DEBUT:CUR),nom+' ajouté')){
     const m=S.membres.filter(x=>x.nom===nom).pop();
     if(m)save(api('ajouterReunion',today(),'',(PMARK+m.id).slice(0,80),[pre,nm,'',adr].join('|').slice(0,120)))}};
-$('#fDep').onsubmit=e=>{e.preventDefault();const motif=$('#dMotif').value.trim(),v=Math.round(+$('#dMontant').value);if(!motif||!(v>0))return;
+$('#fDep').onsubmit=e=>{e.preventDefault();const ps=$('#dPoste').value,motif=((ps?ps+' · ':'')+$('#dMotif').value.trim()).slice(0,80),v=Math.round(+$('#dMontant').value);if(!$('#dMotif').value.trim()||!(v>0))return;
   $('#dMotif').value='';$('#dMontant').value='';save(api('ajouterDepense',motif,v),'Dépense ajoutée')};
 
 // ---------- image du tableau ----------
@@ -890,6 +914,64 @@ $('#tImg').onclick=async()=>{const cv=await dessinerTableau();nomImage='ont-paye
 $('#tabClose').onclick=()=>{$('#ovTab').hidden=true};
 $('#tabDl').onclick=()=>{const a=document.createElement('a');a.href=$('#cvT').toDataURL('image/png');a.download=nomImage||'image.png';document.body.appendChild(a);a.click();a.remove();toast('Image téléchargée (sinon : appui long sur l\'image)')};
 
+// ---------- prévision du Magal ----------
+// On écrit avant le Magal ce qu'on prévoit (dépenses par poste, Jayante attendu).
+// L'application compare avec ce qui est vraiment reçu et dépensé, et montre l'écart.
+const posteDe=d=>{const m=String(d.motif||''),i=m.indexOf(' · ');return i>0?m.slice(0,i):''};
+const depPrev=()=>S.prev.filter(p=>p.type==='D').sort((a,b)=>b.montant-a.montant);
+const jayPrev=()=>S.prev.find(p=>p.type==='R');
+function realiseDep(poste){const k=norm(poste);return S.dep.filter(d=>norm(posteDe(d))===k).reduce((s,d)=>s+(+d.montant||0),0)}
+function sansPoste(){const P=new Set(depPrev().map(p=>norm(p.poste)));return S.dep.filter(d=>!P.has(norm(posteDe(d)))).reduce((s,d)=>s+(+d.montant||0),0)}
+function chiffresPrev(){const M=S.membres,jp=jayPrev(),D=depPrev().map(p=>({p,r:realiseDep(p.poste)})),nc=sansPoste();
+  const cotP=M.length*OBJ,cotR=totalRecu(),jayP=jp?jp.montant:0,jayR=jaySommes();
+  const depP=D.reduce((s,x)=>s+x.p.montant,0),depR=totalDep();
+  return {M,jp,D,nc,cotP,cotR,jayP,jayR,recP:cotP+jayP,recR:cotR+jayR,depP,depR,soldeP:cotP+jayP-depP,soldeR:cotR+jayR-depR}}
+// écart des recettes : reçu - prévu ; écart des dépenses : dépensé - prévu
+function ecR(r,p){if(!p&&!r)return '—';const d=r-p;return d>=0?`<span class="okt">+${N(d)} F</span>`:`<span class="late">Manque ${N(-d)} F</span>`}
+function ecD(r,p){if(!p&&!r)return '—';const d=r-p;return d>0?`<span class="late">Dépassement ${N(d)} F</span>`:`<span style="color:var(--muted)">Reste ${N(-d)} F</span>`}
+const pc=(r,p)=>p?Math.round(100*r/p):0;
+const barreP=(r,p,dep)=>`<div class="obar"><i style="width:${Math.min(100,pc(r,p))}%${dep&&r>p?';background:var(--bad)':''}"></i></div>`;
+function renderPrev(){
+  $('#fPrev').hidden=!S.write;
+  const D=depPrev();$('#dlPostes').innerHTML=D.map(p=>`<option value="${esc(p.poste)}">`).join('');
+  const sel=$('#dPoste'),cur=sel.value;sel.innerHTML='<option value="">— Poste (facultatif) —</option>'+D.map(p=>`<option value="${esc(p.poste)}">${esc(p.poste)}</option>`).join('');sel.value=D.some(p=>p.poste===cur)?cur:'';
+  if(!S.loaded){$('#prevBox').innerHTML='<div class="empty">Chargement…</div>';return}
+  const c=chiffresPrev(),del=p=>S.write?`<button class="btn link" type="button" data-pd="${esc(p.type+'|'+norm(p.poste))}">Supprimer</button>`:'';
+  let h=`<div class="rcs">
+    <div class="rc c1"><span class="lab">Recettes</span><b>${F(c.recR)}</b><small>prévu : ${F(c.recP)} · ${pc(c.recR,c.recP)} %</small><small>${ecR(c.recR,c.recP)}</small></div>
+    <div class="rc c3"><span class="lab">Dépenses</span><b>${F(c.depR)}</b><small>prévu : ${F(c.depP)} · ${pc(c.depR,c.depP)} %</small><small>${ecD(c.depR,c.depP)}</small></div>
+    <div class="rc c4"><span class="lab">Solde</span><b>${F(c.soldeR)}</b><small>prévu : ${F(c.soldeP)}</small><small>${ecR(c.soldeR,c.soldeP)}</small></div></div>`;
+  h+=`<h3 class="ph">💰 Recettes</h3><div class="tw"><table class="pt"><thead><tr><th>Poste</th><th class="mt">Prévu</th><th class="mt">Reçu</th></tr></thead><tbody>
+    <tr><td>Cotisations<small style="display:block;color:var(--muted)">${c.M.length} membres × ${N(OBJ)} F</small>${barreP(c.cotR,c.cotP)}<small class="ec">${ecR(c.cotR,c.cotP)}</small></td><td class="mt">${N(c.cotP)} F</td><td class="mt">${N(c.cotR)} F</td></tr>
+    <tr><td>Jayante (dons)${c.jp?'':'<small style="display:block;color:var(--muted)">pas encore prévu</small>'}${barreP(c.jayR,c.jayP)}<small class="ec">${ecR(c.jayR,c.jayP)}</small>${c.jp?del(c.jp):''}</td><td class="mt">${N(c.jayP)} F</td><td class="mt">${N(c.jayR)} F</td></tr>
+    </tbody><tfoot><tr><td>Total</td><td class="mt">${N(c.recP)} F</td><td class="mt">${N(c.recR)} F</td></tr></tfoot></table></div>`;
+  h+=`<h3 class="ph">🧾 Dépenses</h3>`;
+  if(!c.D.length&&!c.nc)h+=`<div class="empty">Aucune dépense prévue.${S.write?'<br>Ajoutez les postes ci-dessus (transport, nourriture, sonorisation…).':''}</div>`;
+  else h+=`<div class="tw"><table class="pt"><thead><tr><th>Poste</th><th class="mt">Prévu</th><th class="mt">Dépensé</th></tr></thead><tbody>`+
+    c.D.map(x=>`<tr><td>${esc(x.p.poste)}${barreP(x.r,x.p.montant,1)}<small class="ec">${ecD(x.r,x.p.montant)}</small>${del(x.p)}</td><td class="mt">${N(x.p.montant)} F</td><td class="mt">${N(x.r)} F</td></tr>`).join('')+
+    (c.nc?`<tr><td>Autres dépenses<small style="display:block;color:var(--muted)">sans poste choisi</small></td><td class="mt">0 F</td><td class="mt">${N(c.nc)} F</td></tr>`:'')+
+    `</tbody><tfoot><tr><td>Total</td><td class="mt">${N(c.depP)} F</td><td class="mt">${N(c.depR)} F</td></tr></tfoot></table></div>`;
+  h+=`<div class="hint">Pour changer un montant prévu, enregistrez le même poste avec le nouveau montant. Pour qu'une dépense compte dans un poste, choisissez le poste quand vous ajoutez la dépense.</div>`;
+  $('#prevBox').innerHTML=h;
+  document.querySelectorAll('#prevBox [data-pd]').forEach(b=>b.onclick=async()=>{
+    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Supprimer'}},4000);return}
+    const p=S.prev.find(x=>x.type+'|'+norm(x.poste)===b.dataset.pd);if(!p)return;
+    for(const rid of p.rids)if(!await save(api('supprimerReunion',rid),null,()=>{S.prev=S.prev.filter(x=>x!==p)}))return;toast('Prévision supprimée')})}
+function textePrev(){const c=chiffresPrev(),ec=(r,p,dep)=>{const d=r-p;return dep?(d>0?`dépassement ${N(d)} F`:`reste ${N(-d)} F`):(d>=0?`+${N(d)} F`:`manque ${N(-d)} F`)};
+  return [`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`🎯 *PRÉVISION DU MAGAL* — ${MAGAL}`,'',
+    `💰 *Recettes* : reçu ${F(c.recR)} sur ${F(c.recP)} prévus (${ec(c.recR,c.recP)})`,
+    `• Cotisations : ${N(c.cotR)} F / ${N(c.cotP)} F`,`• Jayante : ${N(c.jayR)} F / ${N(c.jayP)} F`,'',
+    `🧾 *Dépenses* : ${F(c.depR)} sur ${F(c.depP)} prévus (${ec(c.depR,c.depP,1)})`,
+    ...c.D.map(x=>`• ${x.p.poste} : ${N(x.r)} F / ${N(x.p.montant)} F`),...(c.nc?[`• Autres dépenses : ${N(c.nc)} F`]:[]),'',
+    `💼 Solde prévu : ${F(c.soldeP)}`,`💰 *En caisse : ${F(c.soldeR)}*`].join('\n')}
+$('#prevCopy').onclick=()=>copier(textePrev(),'Prévision copiée : collez-la dans le groupe WhatsApp');
+$('#pType').onchange=()=>{const j=$('#pType').value==='R';$('#pPoste').hidden=j;$('#pPoste').required=!j};
+$('#fPrev').onsubmit=async e=>{e.preventDefault();const t=$('#pType').value==='R'?'R':'D',poste=t==='R'?'Jayante':net($('#pPoste').value).slice(0,40),v=Math.round(+$('#pMt').value);
+  if(!poste||!(v>=0)||$('#pMt').value==='')return;
+  const old=S.prev.find(x=>x.type===t&&norm(x.poste)===norm(poste));
+  $('#pPoste').value='';$('#pMt').value='';
+  if(await save(api('ajouterReunion',today(),'',(VMARK+poste).slice(0,80),t+'|'+v),'Prévision enregistrée')&&old)for(const rid of old.rids)await save(api('supprimerReunion',rid))};
+
 // ---------- profil et badge du membre ----------
 let bgM=null,bgPhoto=null,bgT=null;
 const PHK=id=>'sl_photo_'+id; // la photo reste sur ce téléphone
@@ -914,7 +996,7 @@ async function dessinerBadge(m,v,photo){
   c.textAlign='center';
   c.fillStyle='#ffffff';ajuster(c,'SOPEY SEYDINA AL HASSAN SALAM',800,32,20,W-120,FD);c.fillText('SOPEY SEYDINA AL HASSAN SALAM',W/2,98);
   c.fillStyle='#e9b730';c.font='800 24px '+FD;c.fillText('SIÈGE '+GROUPE.toUpperCase(),W/2,136);
-  c.fillStyle='#d2f0dc';c.font='600 17px '+FP;c.fillText('Magal Seydina Al Hassan Salam · 34e édition 2027 · Diourbel',W/2,170);
+  c.fillStyle='#d2f0dc';c.font='600 17px '+FP;c.fillText('Magal Seydina Al Hassan Salam · Diourbel',W/2,170);
   c.font='800 17px '+FP;const lt='CARTE DE MEMBRE',lw=c.measureText(lt).width+44;
   c.fillStyle='#e9b730';rrect(c,W/2-lw/2,190,lw,40,20);c.fill();c.fillStyle='#3a2a00';c.fillText(lt,W/2,216);
   // photo du membre (ou initiales)
