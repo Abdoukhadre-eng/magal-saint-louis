@@ -454,7 +454,7 @@ form.add input.n,form.add select{flex:0 1 130px}
 <div class="toast" id="toast" hidden></div>
 <canvas id="cvT" width="1080" height="1400" hidden></canvas>
 <canvas id="cv" width="720" height="1040" hidden></canvas>
-<canvas id="cvB" width="720" height="1100" hidden></canvas>
+<canvas id="cvB" width="720" height="970" hidden></canvas>
 
 <script>
 (function(){
@@ -902,7 +902,7 @@ function chargerImg(src){return new Promise((ok,ko)=>{const i=new Image();i.onlo
 function couper(c,t,max){t=String(t||'');if(c.measureText(t).width<=max)return t;while(t.length>1&&c.measureText(t+'…').width>max)t=t.slice(0,-1);return t+'…'}
 async function dessinerBadge(m,v,photo){
   try{await document.fonts.ready}catch(_){}
-  const cv=$('#cvB'),W=720,H=1100;cv.width=W;cv.height=H;const c=cv.getContext('2d');
+  const cv=$('#cvB'),W=720,H=970;cv.width=W;cv.height=H;const c=cv.getContext('2d');
   const FD='"Bricolage Grotesque", sans-serif',FP='"Public Sans", sans-serif',FM='"IBM Plex Mono", monospace';
   c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);
   c.fillStyle='#ffffff';rrect(c,30,30,W-60,H-60,30);c.fill();
@@ -939,14 +939,6 @@ async function dessinerBadge(m,v,photo){
   c.strokeStyle='#cfe3d3';c.lineWidth=2;c.setLineDash([6,6]);c.beginPath();c.moveTo(100,810);c.lineTo(W-100,810);c.stroke();c.setLineDash([]);
   c.fillStyle='#5f7d68';c.font='700 16px '+FP;c.fillText('ADRESSE',100,848);
   c.fillStyle='#10261a';c.font='600 28px '+FP;c.fillText(couper(c,v.adresse||'—',W-200),100,886);
-  // pied : photo de Seydina Al Hassan Salam
-  const g2=c.createLinearGradient(70,930,W-70,1040);g2.addColorStop(0,'#14532d');g2.addColorStop(1,'#1f7a45');
-  c.fillStyle=g2;rrect(c,70,930,W-140,106,18);c.fill();
-  const ph=$('#photoSeydina');try{if(!ph.complete)await new Promise(r=>{ph.onload=r;ph.onerror=r})}catch(_){}
-  c.save();c.beginPath();c.arc(130,983,40,0,Math.PI*2);c.fillStyle='#e9b730';c.fill();c.beginPath();c.arc(130,983,36,0,Math.PI*2);c.clip();
-  try{c.drawImage(ph,94,947,72,72)}catch(_){}c.restore();
-  c.fillStyle='#ffffff';c.font='800 25px '+FD;c.fillText('Membre · Siège '+GROUPE,190,975);
-  c.fillStyle='#d2f0dc';c.font='600 17px '+FP;c.fillText('Magal Seydina Al Hassan Salam 2027',190,1006);
   return cv}
 async function majBadge(){if(!bgM)return;const cv=await dessinerBadge(bgM,valeursBadge(),bgPhoto);$('#bgImg').src=cv.toDataURL('image/png')}
 function ouvrirBadge(id){const m=S.membres.find(x=>x.id===id);if(!m)return;bgM=m;const p=profDe(m);
