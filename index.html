@@ -623,8 +623,7 @@ const RUBRIQUES={accueil:'Accueil',mois:'Versements du mois',suivi:'Suivi des me
 S.tab='accueil';
 function menu(ouvert){$('#menu').hidden=!ouvert;$('#btnMenu').setAttribute('aria-expanded',ouvert?'true':'false');$('#btnMenu').textContent=ouvert?'✕ Fermer':'☰ Menu'}
 function go(t,depuisRetour){if(!RUBRIQUES[t])t='accueil';
-  if(!depuisRetour){try{if(t==='accueil'&&S.tab!=='accueil'&&history.state&&history.state.tab&&history.state.tab!=='accueil'){history.back();return}
-    if(t!=='accueil'&&S.tab==='accueil')history.pushState({tab:t},'');else if(t!=='accueil')history.replaceState({tab:t},'')}catch(_){}}
+  if(!depuisRetour&&t!==S.tab){try{history.pushState({tab:t},'')}catch(_){}}
   S.tab=t;
   document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==t);
   document.querySelectorAll('#menu [data-go]').forEach(x=>x.classList.toggle('on',x.dataset.go===t));
@@ -636,8 +635,18 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
 $('#tbLogo').src=$('#photoSeydina').src;
 try{history.replaceState({tab:'accueil'},'')}catch(_){}
 go('accueil',true);
-// bouton « retour » du téléphone : ferme la fenêtre ouverte, sinon revient à l'accueil
-window.addEventListener('popstate',e=>{['#ovPay','#ovRecu','#ovFiche','#ovLog','#ovTab','#ovBadge','#ovPres'].forEach(x=>$(x).hidden=true);pending=null;go((e.state&&e.state.tab)||'accueil',true)});
+// bouton « retour » du téléphone : ferme la fenêtre ouverte, sinon revient à la page précédente
+const OVS=['#ovPay','#ovRecu','#ovFiche','#ovLog','#ovTab','#ovBadge','#ovPres'];
+let ovOuvert=null,ignorer=0;
+const ovVisible=()=>{const o=OVS.find(x=>!$(x).hidden);return o||null};
+new MutationObserver(()=>{const v=ovVisible();if(v===ovOuvert)return;
+  try{if(!ovOuvert&&v)history.pushState({tab:S.tab,ov:v},'');
+    else if(ovOuvert&&v)history.replaceState({tab:S.tab,ov:v},'');
+    else if(ovOuvert&&!v&&history.state&&history.state.ov){ignorer++;history.back()}}catch(_){}
+  ovOuvert=v}).observe(document.body,{subtree:true,attributes:true,attributeFilter:['hidden']});
+window.addEventListener('popstate',e=>{if(ignorer){ignorer--;return}
+  if(ovVisible()){OVS.forEach(x=>$(x).hidden=true);pending=null}
+  menu(false);go((e.state&&e.state.tab)||'accueil',true)});
 
 // ---------- suivi ----------
 function barre(t){const p=Math.min(100,Math.round(100*t/OBJ));return `<div class="obar"><i style="width:${p}%"${t>=OBJ?' class="full"':''}></i></div>`}
