@@ -268,7 +268,7 @@ form.add input.n,form.add select{flex:0 1 130px}
       <button type="button" id="prev" aria-label="Mois précédent">‹</button>
       <span class="m" id="mLab">—</span>
       <button type="button" id="next" aria-label="Mois suivant">›</button>
-      <span class="tag">Part de chaque membre : 13 500 F</span>
+      <span class="tag">Part de chaque membre : 19 500 F</span>
       <span class="tag" id="modeTag" style="background:rgba(255,255,255,.18);color:var(--on-deep)"></span>
     </div>
   </header>
@@ -357,8 +357,10 @@ form.add input.n,form.add select{flex:0 1 130px}
     <summary>Membres <span class="lab" id="memCount" style="margin-left:auto"></span></summary>
     <div class="bb">
       <form class="add" id="fMem" hidden>
-        <input id="mNom" placeholder="Prénom et nom" required maxlength="60" autocomplete="off">
+        <input id="mPre" placeholder="Prénom" required maxlength="40" autocomplete="off">
+        <input id="mNom" placeholder="Nom" required maxlength="30" autocomplete="off">
         <input id="mTel" class="n" placeholder="Téléphone" maxlength="20" inputmode="tel" autocomplete="off">
+        <input id="mAdr" placeholder="Adresse (ex. : Pikine, Saint-Louis)" maxlength="60" autocomplete="off">
         <button class="btn pri" type="submit">Ajouter le membre</button>
       </form>
       <div id="memList"></div>
@@ -422,6 +424,23 @@ form.add input.n,form.add select{flex:0 1 130px}
     <div class="lab" style="text-transform:none;letter-spacing:0;font-weight:500;font-size:12.5px">Envoyez l'image dans le groupe WhatsApp.</div>
   </div>
 </div>
+<!-- profil et badge du membre -->
+<div class="ov" id="ovBadge" hidden>
+  <form class="dlg wide" id="fBadge" role="dialog" aria-modal="true" aria-labelledby="bgT">
+    <div><div class="lab">Profil du membre</div><h2 id="bgT">Badge</h2></div>
+    <img id="bgImg" alt="Badge du membre">
+    <label class="fld" for="bgPre">Prénom<input id="bgPre" required maxlength="40" autocomplete="off"></label>
+    <label class="fld" for="bgNom">Nom<input id="bgNom" required maxlength="30" autocomplete="off"></label>
+    <label class="fld" for="bgTel">Téléphone<input id="bgTel" maxlength="20" inputmode="tel" autocomplete="off"></label>
+    <label class="fld" for="bgAdr">Adresse<input id="bgAdr" maxlength="60" autocomplete="off"></label>
+    <div class="fld">Photo (facultatif)
+      <input id="bgPh" type="file" accept="image/*">
+      <button class="btn link" type="button" id="bgPhX" hidden>Retirer la photo</button>
+      <span class="lab" style="text-transform:none;letter-spacing:0;font-weight:500;font-size:12px">La photo reste seulement sur ce téléphone.</span>
+    </div>
+    <div class="acts"><button class="btn" type="button" id="bgClose">Fermer</button><button class="btn" type="submit">Enregistrer le profil</button><button class="btn pri" type="button" id="bgDl">Télécharger le badge</button></div>
+  </form>
+</div>
 <!-- connexion -->
 <div class="ov" id="ovLog" hidden>
   <form class="dlg" id="fLog" role="dialog" aria-modal="true" aria-labelledby="lgT">
@@ -435,6 +454,7 @@ form.add input.n,form.add select{flex:0 1 130px}
 <div class="toast" id="toast" hidden></div>
 <canvas id="cvT" width="1080" height="1400" hidden></canvas>
 <canvas id="cv" width="720" height="1040" hidden></canvas>
+<canvas id="cvB" width="720" height="1100" hidden></canvas>
 
 <script>
 (function(){
@@ -458,7 +478,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const ini=n=>String(n||'?').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const norm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
 
-const S={mois:CUR<DEBUT?DEBUT:CUR,membres:[],pay:{},vers:[],jay:null,nouveau:false,dep:[],reu:[],write:false,loaded:false,q:'',q2:''};
+const S={prof:{},mois:CUR<DEBUT?DEBUT:CUR,membres:[],pay:{},vers:[],jay:null,nouveau:false,dep:[],reu:[],write:false,loaded:false,q:'',q2:''};
 let pending=null,recu=null,TOKEN='';
 try{TOKEN=localStorage.getItem('sl_tok')||''}catch(_){}
 
@@ -475,7 +495,7 @@ function gs(fn,...a){
       .then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||'Réponse invalide');return j.data})}
   return new Promise((res,rej)=>{
   google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||String(e))))[fn](...a)})}
-function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''}))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r));S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render()}
+function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r));S.prof=profils(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
 let gen=0,lect=0;
@@ -489,10 +509,14 @@ async function save(fn,ok,local){gen++;const avant=local?JSON.stringify({membres
 
 const P=(mid,k)=>S.pay[mid+'__'+k];
 const numero=m=>pad(S.membres.indexOf(m)+1);
-const OBJ=13500; // part de chaque membre pour l'année
+const OBJ=19500; // part de chaque membre pour l'année
 // Jayante enregistré dans l'onglet « Réunions » (lieu commençant par JAYANTE ·), car le Code.gs ne peut pas être redéployé
 const JMARK='JAYANTE · ';
 function estJay(r){return String(r.lieu||'').indexOf(JMARK)===0}
+// Profils des membres (prénom, nom, téléphone, adresse) : aussi dans l'onglet « Réunions » (lieu commençant par PROFIL ·)
+const PMARK='PROFIL · ';
+function estProf(r){return String(r.lieu||'').indexOf(PMARK)===0}
+function profils(R){const o={};R.filter(estProf).forEach(r=>{const x=String(r.objet||'').split('|');o[String(r.lieu).slice(PMARK.length)]={rid:r.id,prenom:x[0]||'',nom:x[1]||'',tel:x[2]||'',adresse:x.slice(3).join('|')}});return o}
 function jayDeReu(r){const x=String(r.objet||'').split('|');return {id:r.id,src:'r',date:r.date,donateur:String(r.lieu).slice(JMARK.length),type:['Somme','Matériel','Autre'].includes(x[0])?x[0]:'Autre',montant:+x[1]||0,description:x.slice(2).join('|')}}
 // versements : liste détaillée (nouveau Code.gs) ou un par mois (ancien Code.gs)
 function versements(d){
@@ -540,13 +564,14 @@ function renderFiche(){if(!fiche)return;const m=S.membres.find(x=>x.id===fiche);
   const t=totalDe(m.id),V=versDe(m.id);$('#fAv').textContent=ini(m.nom);$('#fT').textContent=m.nom;
   $('#fSub').textContent=(m.tel?m.tel+' · ':'')+`part de l'année : ${N(OBJ)} F`;
   $('#fStats').innerHTML=`<div class="ok"><span class="lab">Total donné</span><b>${N(t)} F</b></div><div><span class="lab">Versements</span><b>${V.length}</b></div><div class="${t>=OBJ?'ok':''}"><span class="lab">${t>=OBJ?'Part complète':'Reste'}</span><b>${t>=OBJ?'✓'+(t>OBJ?' +'+N(t-OBJ):''):N(OBJ-t)+' F'}</b></div>`+`<div style="grid-column:1/-1;background:none;padding:0">${barre(t)}</div>`;
-  $('#fMois').innerHTML=(S.write?`<button class="btn pri" type="button" id="fAdd">＋ Nouveau versement pour ${esc(m.nom)}</button>`:'')+
+  $('#fMois').innerHTML=(S.write?`<button class="btn pri" type="button" id="fAdd">＋ Nouveau versement pour ${esc(m.nom)}</button><button class="btn" type="button" id="fBg">🪪 Profil et badge</button>`:'')+
     (V.length?V.map(v=>{const md=MD(v);return `<div class="fm"><div class="g"><b>${N(v.montant)} F</b><small>${esc(mLong(v.mois))}${v.date?' · le '+fd(v.date):''}${v.recu?' · N° '+esc(v.recu):''}</small></div><span class="chip ${md.c}">${md.l}</span><button class="btn" type="button" data-fr="${esc(v.id)}">Reçu</button>${S.write?`<button class="btn link" type="button" data-fx="${esc(v.id)}">Annuler</button>`:''}</div>`}).join(''):'<div class="empty">Aucun versement pour l\'instant.</div>');
   document.querySelectorAll('#fMois [data-fr]').forEach(x=>x.onclick=()=>{$('#ovFiche').hidden=true;showRecu(x.dataset.fr)});
   document.querySelectorAll('#fMois [data-fx]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Annuler'}},4000);return}
     annuler(b.dataset.fx)});
   const fa=$('#fAdd');if(fa)fa.onclick=()=>{$('#ovFiche').hidden=true;askPay(m.id)};
+  const fb=$('#fBg');if(fb)fb.onclick=()=>{$('#ovFiche').hidden=true;ouvrirBadge(m.id)};
 }
 function annuler(vid){const v=S.vers.find(x=>x.id===vid);if(!v)return;
   const local=()=>{S.vers=S.nouveau?S.vers.filter(x=>x.id!==vid):S.vers.filter(x=>!(x.membre===v.membre&&x.mois===v.mois));if(!S.nouveau)delete S.pay[v.membre+'__'+v.mois]};
@@ -631,10 +656,11 @@ function render(){
   // membres
   $('#memCount').textContent=M.length?M.length+' membres':'';
   $('#fMem').hidden=$('#fDep').hidden=$('#fReu').hidden=!S.write;
-  $('#memList').innerHTML=M.length?M.map(m=>{const t=totalDe(m.id);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}${N(t)} F donnés · ${etat(t)}</small></div>${S.write?`<button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:''}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
+  $('#memList').innerHTML=M.length?M.map(m=>{const t=totalDe(m.id);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}${S.write&&S.prof[m.id]&&S.prof[m.id].adresse?esc(S.prof[m.id].adresse)+' · ':''}${N(t)} F donnés · ${etat(t)}</small></div>${S.write?`<button class="btn" type="button" data-bg="${esc(m.id)}">🪪 Badge</button><button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:''}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
+  document.querySelectorAll('#memList [data-bg]').forEach(b=>b.onclick=()=>ouvrirBadge(b.dataset.bg));
   document.querySelectorAll('#memList [data-del]').forEach(b=>b.onclick=()=>{
     if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Retirer'}},4000);return}
-    const id=b.dataset.del;save(api('retirerMembre',id),'Membre retiré',()=>{S.membres=S.membres.filter(x=>x.id!==id)})});
+    const id=b.dataset.del,pr=S.prof[id];save(api('retirerMembre',id),'Membre retiré',()=>{S.membres=S.membres.filter(x=>x.id!==id)}).then(ok=>{if(ok&&pr)save(api('supprimerReunion',pr.rid))})});
   // dépenses
   $('#depTot').textContent=dep?F(dep):'';
   const D=S.dep.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
@@ -789,8 +815,8 @@ $('#rTxt').onclick=()=>{if(!recu)return;copier(texteRecu(recu.m,recu.p,recu.k),'
 $('#rDl').onclick=()=>{if(!recu)return;const {m,k}=recu;const a=document.createElement('a');
   a.href=$('#cv').toDataURL('image/png');a.download=`recu-saint-louis-${k}-${norm(m.nom||'membre').replace(/[^a-z0-9]+/g,'-')}.png`;
   document.body.appendChild(a);a.click();a.remove();toast('Reçu téléchargé (sinon : appui long sur l\'image)')};
-[$('#ovPay'),$('#ovRecu'),$('#ovFiche'),$('#ovLog'),$('#ovTab')].forEach(o=>o.onclick=e=>{if(e.target===o){o.hidden=true;pending=null}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){['#ovPay','#ovRecu','#ovFiche','#ovLog','#ovTab'].forEach(s=>$(s).hidden=true);pending=null}});
+[$('#ovPay'),$('#ovRecu'),$('#ovFiche'),$('#ovLog'),$('#ovTab'),$('#ovBadge')].forEach(o=>o.onclick=e=>{if(e.target===o){o.hidden=true;pending=null}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){['#ovPay','#ovRecu','#ovFiche','#ovLog','#ovTab','#ovBadge'].forEach(s=>$(s).hidden=true);pending=null}});
 
 function copier(t,ok){const fb=()=>{const a=document.createElement('textarea');a.value=t;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();let r=false;try{r=document.execCommand('copy')}catch(_){}a.remove();toast(r?ok:'Copie impossible ici')};
   try{navigator.clipboard.writeText(t).then(()=>toast(ok),fb)}catch(_){fb()}}
@@ -804,11 +830,14 @@ $('#recap').onclick=()=>{const k=S.mois,PM=payesMois(k);
     .concat(PM.length?PM.map((x,i)=>`${i+1}. ${x.m.nom} : ${N(x.total)} F`):['• personne pour l\'instant'],
       ['',`Arrêtée à la somme de *${F(totalMois(k))}*`,'',`💰 Caisse : ${F(caisse())}`,S.jay&&S.jay.length?`🎁 dont Jayante : ${F(jaySommes())}`:'','',`🎯 Part de chaque membre : ${F(OBJ)} pour l'année, à verser quand vous voulez`,`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`]).filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n');
   copier(t,'Récap copié : collez-le dans le groupe WhatsApp')};
-$('#fMem').onsubmit=e=>{e.preventDefault();const nom=$('#mNom').value.trim().replace(/\s+/g,' ');if(!nom)return;
+const net=v=>String(v||'').trim().replace(/\s+/g,' ').replace(/\|/g,'/');
+$('#fMem').onsubmit=async e=>{e.preventDefault();const pre=net($('#mPre').value),nm=net($('#mNom').value),nom=(pre+' '+nm).trim();if(!pre||!nm)return;
   if(S.membres.some(m=>m.nom.toLowerCase()===nom.toLowerCase())){status(nom+' est déjà dans la liste.');return}
-  const tel=$('#mTel').value.trim();
-  $('#mNom').value='';$('#mTel').value='';status('');
-  save(api('ajouterMembre',nom,tel,MONTANT,CUR<DEBUT?DEBUT:CUR),nom+' ajouté');$('#mNom').focus()};
+  const tel=$('#mTel').value.trim(),adr=net($('#mAdr').value);
+  ['#mPre','#mNom','#mTel','#mAdr'].forEach(x=>$(x).value='');status('');$('#mPre').focus();
+  if(await save(api('ajouterMembre',nom,tel,MONTANT,CUR<DEBUT?DEBUT:CUR),nom+' ajouté')){
+    const m=S.membres.filter(x=>x.nom===nom).pop();
+    if(m)save(api('ajouterReunion',today(),'',(PMARK+m.id).slice(0,80),[pre,nm,'',adr].join('|').slice(0,120)))}};
 $('#fDep').onsubmit=e=>{e.preventDefault();const motif=$('#dMotif').value.trim(),v=Math.round(+$('#dMontant').value);if(!motif||!(v>0))return;
   $('#dMotif').value='';$('#dMontant').value='';save(api('ajouterDepense',motif,v),'Dépense ajoutée')};
 
@@ -860,6 +889,85 @@ let nomImage='';
 $('#tImg').onclick=async()=>{const cv=await dessinerTableau();nomImage='ont-paye-saint-louis-'+S.mois+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()};
 $('#tabClose').onclick=()=>{$('#ovTab').hidden=true};
 $('#tabDl').onclick=()=>{const a=document.createElement('a');a.href=$('#cvT').toDataURL('image/png');a.download=nomImage||'image.png';document.body.appendChild(a);a.click();a.remove();toast('Image téléchargée (sinon : appui long sur l\'image)')};
+
+// ---------- profil et badge du membre ----------
+let bgM=null,bgPhoto=null,bgT=null;
+const PHK=id=>'sl_photo_'+id; // la photo reste sur ce téléphone
+function profDe(m){const p=S.prof[m.id];
+  if(p)return {prenom:p.prenom,nom:p.nom,tel:m.tel||p.tel||'',adresse:p.adresse||''};
+  const w=String(m.nom||'').split(' ').filter(Boolean);
+  return {prenom:w.length>1?w.slice(0,-1).join(' '):(w[0]||''),nom:w.length>1?w[w.length-1]:'',tel:m.tel||'',adresse:''}}
+function valeursBadge(){return {prenom:net($('#bgPre').value),nom:net($('#bgNom').value),tel:$('#bgTel').value.trim(),adresse:net($('#bgAdr').value)}}
+function chargerImg(src){return new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=src})}
+function couper(c,t,max){t=String(t||'');if(c.measureText(t).width<=max)return t;while(t.length>1&&c.measureText(t+'…').width>max)t=t.slice(0,-1);return t+'…'}
+async function dessinerBadge(m,v,photo){
+  try{await document.fonts.ready}catch(_){}
+  const cv=$('#cvB'),W=720,H=1100;cv.width=W;cv.height=H;const c=cv.getContext('2d');
+  const FD='"Bricolage Grotesque", sans-serif',FP='"Public Sans", sans-serif',FM='"IBM Plex Mono", monospace';
+  c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);
+  c.fillStyle='#ffffff';rrect(c,30,30,W-60,H-60,30);c.fill();
+  // bandeau
+  c.save();rrect(c,30,30,W-60,H-60,30);c.clip();
+  const g=c.createLinearGradient(30,30,W-30,370);g.addColorStop(0,'#0d3a1f');g.addColorStop(1,'#1f7a45');c.fillStyle=g;c.fillRect(30,30,W-60,340);
+  [['#00853f',0],['#fdef42',1],['#e31b23',2]].forEach(([col,i])=>{c.fillStyle=col;c.fillRect(30+i*(W-60)/3,360,(W-60)/3,10)});
+  c.restore();
+  c.textAlign='center';
+  c.fillStyle='#ffffff';ajuster(c,'SOPEY SEYDINA AL HASSAN SALAM',800,32,20,W-120,FD);c.fillText('SOPEY SEYDINA AL HASSAN SALAM',W/2,98);
+  c.fillStyle='#e9b730';c.font='800 24px '+FD;c.fillText('SIÈGE '+GROUPE.toUpperCase(),W/2,136);
+  c.fillStyle='#d2f0dc';c.font='600 17px '+FP;c.fillText('Magal Seydina Al Hassan Salam · 34e édition 2027 · Diourbel',W/2,170);
+  c.font='800 17px '+FP;const lt='CARTE DE MEMBRE',lw=c.measureText(lt).width+44;
+  c.fillStyle='#e9b730';rrect(c,W/2-lw/2,190,lw,40,20);c.fill();c.fillStyle='#3a2a00';c.fillText(lt,W/2,216);
+  // photo du membre (ou initiales)
+  const cx=W/2,cy=370;
+  c.beginPath();c.arc(cx,cy,134,0,Math.PI*2);c.fillStyle='#ffffff';c.fill();
+  c.beginPath();c.arc(cx,cy,128,0,Math.PI*2);c.fillStyle='#e9b730';c.fill();
+  c.save();c.beginPath();c.arc(cx,cy,121,0,Math.PI*2);c.clip();
+  let img=null;if(photo){try{img=await chargerImg(photo)}catch(_){}}
+  if(img)c.drawImage(img,cx-121,cy-121,242,242);
+  else{c.fillStyle='#e3f1e5';c.fillRect(cx-121,cy-121,242,242);c.fillStyle='#1f7a45';c.font='800 92px '+FD;c.fillText(ini((v.prenom+' '+v.nom).trim()||m.nom),cx,cy+32)}
+  c.restore();
+  // prénom, nom, numéro
+  c.fillStyle='#10261a';ajuster(c,v.prenom||'—',600,46,26,W-140,FP);c.fillText(v.prenom||'—',W/2,568);
+  c.fillStyle='#14532d';const NM=(v.nom||'').toUpperCase()||'—';ajuster(c,NM,800,56,30,W-140,FD);c.fillText(NM,W/2,630);
+  c.font='600 21px '+FM;const nt='N° '+PREF+'-'+numero(m),nw=c.measureText(nt).width+36;
+  c.fillStyle='#e3f1e5';rrect(c,W/2-nw/2,650,nw,38,19);c.fill();c.fillStyle='#1f7a45';c.fillText(nt,W/2,676);
+  c.textAlign='left';
+  // coordonnées
+  c.fillStyle='#f3f9f4';rrect(c,70,710,W-140,196,18);c.fill();
+  c.fillStyle='#5f7d68';c.font='700 16px '+FP;c.fillText('TÉLÉPHONE',100,752);
+  c.fillStyle='#10261a';c.font='600 29px '+FM;c.fillText(couper(c,v.tel||'—',W-200),100,790);
+  c.strokeStyle='#cfe3d3';c.lineWidth=2;c.setLineDash([6,6]);c.beginPath();c.moveTo(100,810);c.lineTo(W-100,810);c.stroke();c.setLineDash([]);
+  c.fillStyle='#5f7d68';c.font='700 16px '+FP;c.fillText('ADRESSE',100,848);
+  c.fillStyle='#10261a';c.font='600 28px '+FP;c.fillText(couper(c,v.adresse||'—',W-200),100,886);
+  // pied : photo de Seydina Al Hassan Salam
+  const g2=c.createLinearGradient(70,930,W-70,1040);g2.addColorStop(0,'#14532d');g2.addColorStop(1,'#1f7a45');
+  c.fillStyle=g2;rrect(c,70,930,W-140,106,18);c.fill();
+  const ph=$('#photoSeydina');try{if(!ph.complete)await new Promise(r=>{ph.onload=r;ph.onerror=r})}catch(_){}
+  c.save();c.beginPath();c.arc(130,983,40,0,Math.PI*2);c.fillStyle='#e9b730';c.fill();c.beginPath();c.arc(130,983,36,0,Math.PI*2);c.clip();
+  try{c.drawImage(ph,94,947,72,72)}catch(_){}c.restore();
+  c.fillStyle='#ffffff';c.font='800 25px '+FD;c.fillText('Membre · Siège '+GROUPE,190,975);
+  c.fillStyle='#d2f0dc';c.font='600 17px '+FP;c.fillText('Magal Seydina Al Hassan Salam 2027',190,1006);
+  return cv}
+async function majBadge(){if(!bgM)return;const cv=await dessinerBadge(bgM,valeursBadge(),bgPhoto);$('#bgImg').src=cv.toDataURL('image/png')}
+function ouvrirBadge(id){const m=S.membres.find(x=>x.id===id);if(!m)return;bgM=m;const p=profDe(m);
+  $('#bgPre').value=p.prenom;$('#bgNom').value=p.nom;$('#bgTel').value=p.tel;$('#bgAdr').value=p.adresse;
+  bgPhoto=null;try{bgPhoto=localStorage.getItem(PHK(id))}catch(_){}
+  $('#bgPh').value='';$('#bgPhX').hidden=!bgPhoto;$('#bgT').textContent='Badge de '+m.nom;$('#ovBadge').hidden=false;majBadge()}
+['#bgPre','#bgNom','#bgTel','#bgAdr'].forEach(s=>$(s).oninput=()=>{clearTimeout(bgT);bgT=setTimeout(majBadge,250)});
+$('#bgPh').onchange=async e=>{const f=e.target.files&&e.target.files[0];if(!f||!bgM)return;
+  try{const url=URL.createObjectURL(f),im=await chargerImg(url),T=320,k=document.createElement('canvas');k.width=k.height=T;
+    const s=Math.min(im.width,im.height);k.getContext('2d').drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,T,T);URL.revokeObjectURL(url);
+    bgPhoto=k.toDataURL('image/jpeg',0.82);try{localStorage.setItem(PHK(bgM.id),bgPhoto)}catch(_){toast('Photo trop lourde : elle ne sera pas gardée')}
+    $('#bgPhX').hidden=false;majBadge()}catch(_){toast('Photo illisible, essayez une autre')}};
+$('#bgPhX').onclick=()=>{if(!bgM)return;bgPhoto=null;try{localStorage.removeItem(PHK(bgM.id))}catch(_){}$('#bgPh').value='';$('#bgPhX').hidden=true;majBadge()};
+$('#fBadge').onsubmit=async e=>{e.preventDefault();if(!bgM)return;const v=valeursBadge();if(!v.prenom||!v.nom)return;const m=bgM,old=S.prof[m.id];
+  // le numéro de la liste des membres reste protégé : on ne garde ici qu'un numéro nouveau ou différent
+  const tel=v.tel&&v.tel!==m.tel?v.tel.replace(/\|/g,'/'):'';
+  if(await save(api('ajouterReunion',today(),'',(PMARK+m.id).slice(0,80),[v.prenom,v.nom,tel,v.adresse].join('|').slice(0,120)),'Profil enregistré')&&old)save(api('supprimerReunion',old.rid))};
+$('#bgDl').onclick=async()=>{if(!bgM)return;const v=valeursBadge(),cv=await dessinerBadge(bgM,v,bgPhoto);const a=document.createElement('a');
+  a.href=cv.toDataURL('image/png');a.download='badge-'+norm(v.prenom+' '+v.nom||bgM.nom).replace(/[^a-z0-9]+/g,'-')+'.png';
+  document.body.appendChild(a);a.click();a.remove();toast('Badge téléchargé (sinon : appui long sur l\'image)')};
+$('#bgClose').onclick=()=>{$('#ovBadge').hidden=true;bgM=null};
 
 // ---------- connexion trésorière ----------
 function majBtn(){$('#btnAdmin').textContent=S.write?'Se déconnecter':'Connexion trésorière'}
