@@ -107,7 +107,7 @@ details.ko>summary{cursor:pointer;font-weight:700;color:var(--bad);padding:10px 
 .tabs button{border:0;background:none;border-radius:10px;padding:10px 4px;font-weight:700;font-size:13.5px;cursor:pointer;color:var(--ink2)}
 .tabs button.on{background:var(--deep);color:#fff}
 @media (max-width:420px){.tabs button{font-size:11px;padding:9px 1px}}
-.box.prev{border-top-color:var(--sun)}.compte{align-self:center;background:rgba(255,255,255,.15);border-radius:99px;padding:7px 16px;font-size:14px;font-weight:600;text-align:center;color:var(--on-deep)}.compte b{color:var(--sun);font-size:18px;font-family:var(--f-num)}.pr{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}.pr input{width:20px;height:20px;flex:none;accent-color:var(--deep2)}#prList{max-height:50vh;overflow:auto}.ph{font-size:15px;margin:16px 0 6px}#prevBox .pt td .obar{margin-top:6px}#prevBox .pt td .btn{display:block;margin:4px 0 0;padding-left:0}#prevBox .ec{display:block;margin-top:4px;font-size:12.5px;font-weight:600}#pType{min-width:0}
+.box.prev{border-top-color:var(--sun)}.compte{align-self:center;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.15);border-radius:16px;padding:8px 14px;color:var(--on-deep);text-align:left}.compte .jx{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1;color:var(--sun);white-space:nowrap}.compte .cd b{display:block;font-size:14.5px}.compte .cd small{display:block;font-size:12.5px;color:var(--on-deep2)}.pr{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line);font-size:15px;cursor:pointer}.pr input{width:20px;height:20px;flex:none;accent-color:var(--deep2)}#prList{max-height:50vh;overflow:auto}.ph{font-size:15px;margin:16px 0 6px}#prevBox .pt td .obar{margin-top:6px}#prevBox .pt td .btn{display:block;margin:4px 0 0;padding-left:0}#prevBox .ec{display:block;margin-top:4px;font-size:12.5px;font-weight:600}#pType{min-width:0}
 .big1{width:100%;padding:12px;font-size:15px;margin-top:10px}
 .hint{font-size:12.5px;color:var(--muted);padding-top:8px}
 .obar{height:8px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-top:5px;border:1px solid var(--line)}
@@ -622,7 +622,10 @@ const pl=(n,a,b)=>n>1?b:a;
 const RUBRIQUES={accueil:'Accueil',mois:'Versements du mois',suivi:'Suivi des membres',route:'Feuille de route',jay:'Jayante',recap:'Récapitulatif',prev:'Prévision',membres:'Membres',dep:'Dépenses'};
 S.tab='accueil';
 function menu(ouvert){$('#menu').hidden=!ouvert;$('#btnMenu').setAttribute('aria-expanded',ouvert?'true':'false');$('#btnMenu').textContent=ouvert?'✕ Fermer':'☰ Menu'}
-function go(t){if(!RUBRIQUES[t])t='accueil';S.tab=t;
+function go(t,depuisRetour){if(!RUBRIQUES[t])t='accueil';
+  if(!depuisRetour){try{if(t==='accueil'&&S.tab!=='accueil'&&history.state&&history.state.tab&&history.state.tab!=='accueil'){history.back();return}
+    if(t!=='accueil'&&S.tab==='accueil')history.pushState({tab:t},'');else if(t!=='accueil')history.replaceState({tab:t},'')}catch(_){}}
+  S.tab=t;
   document.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==t);
   document.querySelectorAll('#menu [data-go]').forEach(x=>x.classList.toggle('on',x.dataset.go===t));
   $('#tbCur').textContent=t==='accueil'?'':RUBRIQUES[t];menu(false);window.scrollTo(0,0)}
@@ -631,7 +634,10 @@ document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g
   if(!$('#menu').hidden&&!e.target.closest('#menu'))menu(false)});
 ['#recap','#btnMaj','#btnAdmin'].forEach(x=>$(x).addEventListener('click',()=>menu(false)));
 $('#tbLogo').src=$('#photoSeydina').src;
-go('accueil');
+try{history.replaceState({tab:'accueil'},'')}catch(_){}
+go('accueil',true);
+// bouton « retour » du téléphone : ferme la fenêtre ouverte, sinon revient à l'accueil
+window.addEventListener('popstate',e=>{['#ovPay','#ovRecu','#ovFiche','#ovLog','#ovTab','#ovBadge','#ovPres'].forEach(x=>$(x).hidden=true);pending=null;go((e.state&&e.state.tab)||'accueil',true)});
 
 // ---------- suivi ----------
 function barre(t){const p=Math.min(100,Math.round(100*t/OBJ));return `<div class="obar"><i style="width:${p}%"${t>=OBJ?' class="full"':''}></i></div>`}
@@ -1106,8 +1112,10 @@ $('#bgClose').onclick=()=>{$('#ovBadge').hidden=true;bgM=null};
 // ---------- compte à rebours du Magal ----------
 const DATE_MAGAL='2027-08-28';
 function renderCompte(){const e=$('#compte'),n=Math.round((dObj(DATE_MAGAL)-dObj(today()))/86400000);
-  if(n<0){e.hidden=true;return}e.hidden=false;
-  e.innerHTML=n===0?'🌙 C\'est aujourd\'hui le Magal !':`⏳ Plus que <b>${N(n)}</b> ${pl(n,'jour','jours')} avant le Magal · ${esc(dLong(DATE_MAGAL))}`}
+  e.hidden=false;const d=new Date(),h=pad(d.getHours())+'h'+pad(d.getMinutes()),auj=dLong(today()).replace(/^./,x=>x.toUpperCase());
+  const j=n>0?`<span class="jx">J-${n}</span>`:n===0?'<span class="jx">Jour J</span>':'';
+  e.innerHTML=`${j}<span class="cd"><b>${esc(auj)} · ${h}</b><small>${n>0?'avant le Magal du '+esc(dLong(DATE_MAGAL)):n===0?'C\'est aujourd\'hui le Magal !':'Magal du '+esc(dLong(DATE_MAGAL))}</small></span>`}
+setInterval(()=>{if(!$('#compte').hidden||S.loaded)renderCompte()},20000);
 
 // ---------- présences aux réunions ----------
 // Gardées dans l'onglet « Réunions » : lieu « PRESENCE · <id de la réunion> · <n> », objet = codes des membres présents
