@@ -573,7 +573,7 @@ function gs(fn,...a){
       .then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||'Réponse invalide');return j.data})}
   return new Promise((res,rej)=>{
   google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||String(e))))[fn](...a)})}
-function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};S.vers=versements(d);S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r)&&!estPrev(r)&&!estPres(r));S.pres=presences(R);S.prof=profils(R);S.prev=previsions(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render();if(!deCache)nettoyer()}
+function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=d.membres||[];S.pay=d.pay||{};{const T=versements(d),ok=new Set(S.membres.map(m=>m.id));S.vers=T.filter(v=>ok.has(v.membre));S.orph=T.filter(v=>!ok.has(v.membre))}S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r)&&!estPrev(r)&&!estPres(r));S.pres=presences(R);S.prof=profils(R);S.prev=previsions(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render();if(!deCache)nettoyer()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
 let gen=0,lect=0;
@@ -697,16 +697,16 @@ function annuler(vid){const v=S.vers.find(x=>x.id===vid);if(!v)return;
   if(S.nouveau)save(api('annulerVersement',vid),'Versement annulé',local);
   else save(api('annulerPaiement',v.membre,v.mois),'Versement annulé',local)}
 // Retirer un membre = supprimer aussi ses versements (la caisse et le récap restent justes) et son profil
-async function supprimerVersDe(ids){const V=S.vers.filter(v=>ids.includes(v.membre));
+async function supprimerVersDe(ids){const V=S.vers.concat(S.orph||[]).filter(v=>ids.includes(v.membre));
   if(S.nouveau){for(const v of V)if(!await save(api('annulerVersement',v.id)))return false}
   else{const vus=new Set();for(const v of V){const k=v.membre+'__'+v.mois;if(vus.has(k))continue;vus.add(k);if(!await save(api('annulerPaiement',v.membre,v.mois)))return false}}
-  S.vers=S.vers.filter(v=>!ids.includes(v.membre));for(const k of Object.keys(S.pay))if(ids.includes(k.split('__')[0]))delete S.pay[k];render();
+  S.vers=S.vers.filter(v=>!ids.includes(v.membre));S.orph=(S.orph||[]).filter(v=>!ids.includes(v.membre));for(const k of Object.keys(S.pay))if(ids.includes(k.split('__')[0]))delete S.pay[k];render();
   return true}
 async function retirerMembreTout(id){const pr=S.prof[id];
   if(!await supprimerVersDe([id]))return;
   if(!await save(api('retirerMembre',id),'Membre retiré avec ses versements',()=>{S.membres=S.membres.filter(x=>x.id!==id)}))return;
   if(pr)save(api('supprimerReunion',pr.rid))}
-const orphelins=()=>S.vers.filter(v=>!S.membres.some(m=>m.id===v.membre));
+const orphelins=()=>(S.orph||[]).concat(S.vers.filter(v=>!S.membres.some(m=>m.id===v.membre)));
 // Les versements des membres déjà retirés partent tout seuls (trésorière connectée)
 let nettoie=false;async function nettoyer(){if(nettoie||!S.write)return;const ids=[...new Set(orphelins().map(v=>v.membre))];if(!ids.length)return;
   nettoie=true;try{if(await supprimerVersDe(ids))toast('Versements des membres retirés supprimés')}finally{nettoie=false}}
