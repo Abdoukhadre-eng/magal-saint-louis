@@ -1262,7 +1262,8 @@ $('#bilanImg').onclick=async()=>{const cv=await dessinerBilan();nomImage='bilan-
 async function dessinerRecap(){try{await document.fonts.ready}catch(_){}
   const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=totalDep(),mat=jayMat().length,MS=moisListe().filter(k=>totalMois(k));
   const donne=new Set(S.vers.map(v=>v.membre)).size,comp=M.filter(m=>totalDe(m.id)>=OBJ).length;
-  const W=1080,RH=56,H=390+100+(Math.max(1,MS.length)+1)*RH+30+100+4*RH+40+150+110;
+  const MC=M.map(m=>({m,t:totalDe(m.id)})).filter(x=>x.t>0).sort((a,b)=>b.t-a.t||a.m.nom.localeCompare(b.m.nom,'fr'));
+  const W=1080,RH=56,H=390+100+(Math.max(1,MC.length)+1)*RH+30+100+(Math.max(1,MS.length)+1)*RH+30+100+4*RH+40+150+110;
   const cv=$('#cvT');cv.width=W;cv.height=H;const c=cv.getContext('2d');
   c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);c.fillStyle='#ffffff';rrect(c,30,30,W-60,H-60,28);c.fill();
   bandeau(c,W,'RÉCAPITULATIF GÉNÉRAL',MAGAL+' · arrêté le '+fd(today()));
@@ -1274,7 +1275,11 @@ async function dessinerRecap(){try{await document.fonts.ready}catch(_){}
     c.fillStyle=tot?'#ffffff':'#10261a';c.font=(tot?'700':'600')+' 24px "Public Sans", sans-serif';c.fillText(couper(c,nom,W-2*X0-300),X0+6,y+35);
     c.font='600 24px "IBM Plex Mono", monospace';c.textAlign='right';c.fillStyle=tot?'#e9b730':(coul||'#14532d');c.fillText(v,X3,y+35);c.textAlign='left';
     if(!tot){c.strokeStyle='#e1ede4';c.lineWidth=1;c.beginPath();c.moveTo(X0-10,y+RH-4);c.lineTo(W-X0+10,y+RH-4);c.stroke()}y+=RH};
-  tete('Cotisations par mois',['MOIS','REÇU']);
+  tete('Membres qui ont cotisé',['MEMBRE','DONNÉ']);
+  if(!MC.length){c.fillStyle='#5f7d68';c.font='500 22px "Public Sans", sans-serif';c.fillText('Personne pour l\'instant.',X0+6,y+35);y+=RH}
+  MC.forEach((x,i)=>ligne((i+1)+'. '+x.m.nom+(x.t>=OBJ?'  ✅':''),F(x.t)));
+  ligne('Total ('+MC.length+' '+pl(MC.length,'membre','membres')+')',F(MC.reduce((a,x)=>a+x.t,0)),1);
+  y+=30;tete('Cotisations par mois',['MOIS','REÇU']);
   if(!MS.length){c.fillStyle='#5f7d68';c.font='500 22px "Public Sans", sans-serif';c.fillText('Aucune cotisation pour l\'instant.',X0+6,y+35);y+=RH}
   MS.forEach(k=>ligne(mLong(k),F(totalMois(k))));
   ligne('Total des cotisations ('+donne+' '+pl(donne,'membre','membres')+')',F(cot),1);
