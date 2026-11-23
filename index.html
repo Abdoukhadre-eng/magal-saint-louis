@@ -1322,14 +1322,15 @@ function renderReprise(){const b=$('#impBox');if(!b)return;if(!S.write||!S.loade
   const nm=t.filter(x=>x.membre).length,nv=t.length-nm;
   b.innerHTML=`<div class="hint" style="margin:0 0 10px;padding:10px 12px;border:1px solid var(--sun);background:var(--sun-soft);border-radius:12px;color:var(--ink)">📥 <b>Cotisations de septembre et octobre 2026</b> à mettre dans l'application : ${nm?nm+' '+pl(nm,'membre','membres')+' à ajouter et ':''}${nv} ${pl(nv,'versement','versements')}.<br><button class="btn pri" type="button" id="impGo" style="margin-top:8px">Mettre ces cotisations</button></div>`;
   $('#impGo').onclick=lancerReprise}
-async function lancerReprise(){const t=resteReprise(),tot=t.length;let i=0;reprise='0 / '+tot;nettoie=true;gen++;renderReprise();
+async function lancerReprise(){const t=resteReprise(),tot=t.length,bloques=[];let i=0;reprise='0 / '+tot;nettoie=true;gen++;renderReprise();
   try{
     for(const r of REPRISE){let m=membreReprise(r);
-      if(!m){await api('ajouterMembre',r[0],'',MONTANT,DEBUT)();i++;reprise=i+' / '+tot;gen++;renderReprise();m=membreReprise(r);if(!m)throw new Error(r[0]+' non ajouté')}
+      if(!m){try{await api('ajouterMembre',r[0],'',MONTANT,DEBUT)()}catch(e){if(/déjà/i.test(e&&e.message)){bloques.push(r[0]);continue}throw e}
+        i++;reprise=i+' / '+tot;gen++;renderReprise();m=membreReprise(r);if(!m){bloques.push(r[0]);continue}}
       for(const [k,v,d] of [['2026-09',r[2],'2026-09-30'],['2026-10',r[3],'2026-10-31']]){
         if(!v||S.vers.some(x=>x.membre===m.id&&x.mois===k))continue;
         await api('payer',m.id,k,'wave',v,d)();i++;reprise=i+' / '+tot;gen++;renderReprise()}}
-    reprise=false;toast('Cotisations de septembre et octobre mises : '+i+' enregistrements')}
+    reprise=false;if(bloques.length)status('Pas pu ajouter : '+bloques.join(', ')+'. Ces noms sont encore dans la feuille Google Sheets comme membres retirés. Supprimez leurs lignes dans l\'onglet des membres de la feuille, puis appuyez de nouveau sur le bouton.');else toast('Cotisations de septembre et octobre mises : '+i+' enregistrements')}
   catch(e){reprise=false;status('Reprise arrêtée ('+(e&&e.message||e)+'). Appuyez de nouveau sur le bouton : elle reprend où elle s\'est arrêtée.')}
   finally{nettoie=false;gen++;render();charger()}}
 
