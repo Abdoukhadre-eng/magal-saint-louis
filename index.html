@@ -435,7 +435,6 @@ form.add input.n,form.add select{flex:0 1 130px}
         <input id="mAdr" placeholder="Adresse (ex. : Pikine, Saint-Louis)" maxlength="60" autocomplete="off">
         <button class="btn pri" type="submit">Ajouter le membre</button>
       </form>
-      <div id="orph"></div>
       <div id="memList"></div>
     </div>
   </section>
@@ -697,16 +696,6 @@ function annuler(vid){const v=S.vers.find(x=>x.id===vid);if(!v)return;
   const local=()=>{S.vers=S.nouveau?S.vers.filter(x=>x.id!==vid):S.vers.filter(x=>!(x.membre===v.membre&&x.mois===v.mois));if(!S.nouveau)delete S.pay[v.membre+'__'+v.mois]};
   if(S.nouveau)save(api('annulerVersement',vid),'Versement annulé',local);
   else save(api('annulerPaiement',v.membre,v.mois),'Versement annulé',local)}
-// Retirer un membre = supprimer aussi ses versements (la caisse et le récap restent justes) et son profil
-async function supprimerVersDe(ids){const V=S.vers.filter(v=>ids.includes(v.membre));
-  if(S.nouveau){for(const v of V)if(!await save(api('annulerVersement',v.id)))return false}
-  else{const vus=new Set();for(const v of V){const k=v.membre+'__'+v.mois;if(vus.has(k))continue;vus.add(k);if(!await save(api('annulerPaiement',v.membre,v.mois)))return false}}
-  return true}
-async function retirerMembreTout(id){const pr=S.prof[id];
-  if(!await supprimerVersDe([id]))return;
-  if(!await save(api('retirerMembre',id),'Membre retiré avec ses versements',()=>{S.membres=S.membres.filter(x=>x.id!==id)}))return;
-  if(pr)save(api('supprimerReunion',pr.rid))}
-const orphelins=()=>S.vers.filter(v=>!S.membres.some(m=>m.id===v.membre));
 function releve(m){const t=totalDe(m.id),V=versDe(m.id).slice().reverse();
   return [`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL}`,'',`👤 *${m.nom}*`,'',...(V.length?V.map(v=>`✅ ${N(v.montant)} F · ${mLong(v.mois)}${v.date?' (le '+fd(v.date)+')':''}`):['Aucun versement pour l\'instant.']),'',`💰 Total donné : *${F(t)}* sur ${F(OBJ)}`,t>=OBJ?'👏 Part complète, jërëjëf !':`⏳ Reste : ${F(OBJ-t)}`,'',`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`].join('\n')}
 $('#fClose').onclick=()=>{$('#ovFiche').hidden=true;fiche=null};
@@ -788,14 +777,9 @@ function render(){
   $('#fMem').hidden=$('#fDep').hidden=$('#fReu').hidden=!S.write;
   $('#memList').innerHTML=M.length?M.map(m=>{const t=totalDe(m.id);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}${S.write&&S.prof[m.id]&&S.prof[m.id].adresse?esc(S.prof[m.id].adresse)+' · ':''}${N(t)} F donnés · ${etat(t)}</small></div>${S.write?`<button class="btn" type="button" data-bg="${esc(m.id)}">🪪 Badge</button><button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:''}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
   document.querySelectorAll('#memList [data-bg]').forEach(b=>b.onclick=()=>ouvrirBadge(b.dataset.bg));
-  const O=S.write&&S.loaded?orphelins():[];
-  $('#orph').innerHTML=O.length?`<div class="hint" style="margin:0 0 10px;padding:10px 12px;border:1px solid var(--sun);background:var(--sun-soft);border-radius:12px;color:var(--ink)">⚠️ <b>${O.length} ${pl(O.length,'versement','versements')} (${F(O.reduce((s,v)=>s+v.montant,0))})</b> ${pl(O.length,'appartient','appartiennent')} à des membres déjà retirés${[...new Set(O.map(v=>v.nom).filter(Boolean))].length?' ('+esc([...new Set(O.map(v=>v.nom).filter(Boolean))].join(', '))+')':''}. ${pl(O.length,'Il compte','Ils comptent')} encore dans la caisse.<br><button class="btn" type="button" id="orphX" style="margin-top:8px">Supprimer ces versements</button></div>`:'';
-  const ox=$('#orphX');if(ox)ox.onclick=async()=>{if(!ox.classList.contains('sure')){ox.classList.add('sure');ox.textContent='Confirmer la suppression';return}
-    ox.disabled=true;const ids=[...new Set(orphelins().map(v=>v.membre))];if(await supprimerVersDe(ids))toast('Versements supprimés : la caisse est à jour')};
   document.querySelectorAll('#memList [data-del]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.del,nv=versDe(id).length;
-    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent=nv?`Confirmer (supprime aussi ${nv} ${pl(nv,'versement','versements')})`:'Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Retirer'}},6000);return}
-    retirerMembreTout(id)});
+    if(!b.classList.contains('sure')){b.classList.add('sure');b.textContent='Confirmer';setTimeout(()=>{if(b.isConnected){b.classList.remove('sure');b.textContent='Retirer'}},4000);return}
+    const id=b.dataset.del,pr=S.prof[id];save(api('retirerMembre',id),'Membre retiré',()=>{S.membres=S.membres.filter(x=>x.id!==id)}).then(ok=>{if(ok&&pr)save(api('supprimerReunion',pr.rid))})});
   // dépenses
   $('#depTot').textContent=dep?F(dep):'';
   const D=S.dep.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
