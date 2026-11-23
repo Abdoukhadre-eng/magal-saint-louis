@@ -293,7 +293,7 @@ form.add input.n,form.add select{flex:0 1 130px}
       <button class="mi" type="button" data-go="membres">🧑‍🤝‍🧑 Membres</button>
       <button class="mi" type="button" data-go="dep">🧾 Dépenses</button>
       <hr>
-      <button class="mi" type="button" id="recap">📋 Copier le récap WhatsApp</button>
+      <button class="mi" type="button" id="recap">📥 Télécharger le récap</button>
       <button class="mi" type="button" id="btnMaj">🔄 Actualiser</button>
       <button class="mi" type="button" id="btnAdmin">Connexion trésorière</button>
     </div>
@@ -405,7 +405,7 @@ form.add input.n,form.add select{flex:0 1 130px}
 
   <!-- RÉCAP -->
   <section class="box recap" data-pane="recap" hidden aria-labelledby="tRecap">
-    <div class="bh"><h2 id="tRecap">Récapitulatif général</h2><button class="btn sun" type="button" id="recapAll">Copier le récapitulatif</button><button class="btn" type="button" id="xlsx" hidden>📥 Sauvegarde Excel</button></div>
+    <div class="bh"><h2 id="tRecap">Récapitulatif général</h2><button class="btn sun" type="button" id="recapAll">📥 Télécharger le récap</button><button class="btn" type="button" id="xlsx" hidden>📥 Sauvegarde Excel</button></div>
     <div class="bb" id="recapBox"><div class="empty">Chargement…</div></div>
   </section>
 
@@ -777,7 +777,7 @@ function texteRecap(){const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=tota
   return [`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL} · 34e édition à Diourbel`,'',`📊 *RÉCAPITULATIF GÉNÉRAL*`,'',`💵 Cotisations : *${F(cot)}* (${donne} ${pl(donne,'membre','membres')})`,
     ...moisListe().filter(k=>totalMois(k)).map(k=>`   • ${mLong(k)} : ${N(totalMois(k))} F`),
     `🎁 Jayante : *${F(jay)}*${jayMat().length?' + '+jayMat().length+' matériel(s) / autres dons':''}`,dep?`🧾 Dépenses : ${F(dep)}`:'',`💰 *En caisse : ${F(cot+jay-dep)}*`,'',`🎯 Part de chaque membre : ${F(OBJ)} — ${comp} ${pl(comp,'membre a','membres ont')} complété sa part`,'',`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n')}
-$('#recapAll').onclick=()=>copier(texteRecap(),'Récapitulatif copié : collez-le sur WhatsApp');
+
 
 // ---------- écran principal ----------
 function render(){
@@ -984,11 +984,7 @@ $('#copyNum').onclick=()=>copier(NUMERO.replace(/\s/g,''),'Numéro copié');
 // ---------- navigation et formulaires ----------
 $('#prev').onclick=()=>{S.mois=addM(S.mois,-1);render()};
 $('#next').onclick=()=>{S.mois=addM(S.mois,1);render()};
-$('#recap').onclick=()=>{const k=S.mois,PM=payesMois(k);
-  const t=[`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`${MAGAL} · 34e édition à Diourbel`,'',`📅 Cotisations de *${mLong(k)}*`,'',`✅ Ont payé (${PM.length}) :`]
-    .concat(PM.length?PM.map((x,i)=>`${i+1}. ${x.m.nom} : ${N(x.total)} F`):['• personne pour l\'instant'],
-      ['',`Arrêtée à la somme de *${F(totalMois(k))}*`,'',`💰 Caisse : ${F(caisse())}`,S.jay&&S.jay.length?`🎁 dont Jayante : ${F(jaySommes())}`:'','',`🎯 Part de chaque membre : ${F(OBJ)} pour l'année, à verser quand vous voulez`,`📲 ${NUMERO} (Wave ou Orange Money) – ${TRESORIERE}, trésorière`]).filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n');
-  copier(t,'Récap copié : collez-le dans le groupe WhatsApp')};
+
 const net=v=>String(v||'').trim().replace(/\s+/g,' ').replace(/\|/g,'/');
 $('#fMem').onsubmit=async e=>{e.preventDefault();const pre=net($('#mPre').value),nm=net($('#mNom').value),nom=(pre+' '+nm).trim();if(!pre||!nm)return;
   if(S.membres.some(m=>m.nom.toLowerCase()===nom.toLowerCase())){status(nom+' est déjà dans la liste.');return}
@@ -1261,6 +1257,39 @@ async function dessinerBilan(){try{await document.fonts.ready}catch(_){}
   c.fillStyle='#36533f';c.font='500 19px "Public Sans", sans-serif';c.fillText(comp+' '+pl(comp,'membre','membres')+' sur '+c0.M.length+' '+pl(comp,'a complété sa','ont complété leur')+' part'+(mat?' · '+mat+' don'+(mat>1?'s':'')+' en matériel':''),X0+20,y+130);
   return cv}
 $('#bilanImg').onclick=async()=>{const cv=await dessinerBilan();nomImage='bilan-magal-saint-louis-'+today()+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()};
+
+// ---------- récapitulatif général (image, même format que le bilan) ----------
+async function dessinerRecap(){try{await document.fonts.ready}catch(_){}
+  const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=totalDep(),mat=jayMat().length,MS=moisListe().filter(k=>totalMois(k));
+  const donne=new Set(S.vers.map(v=>v.membre)).size,comp=M.filter(m=>totalDe(m.id)>=OBJ).length;
+  const W=1080,RH=56,H=390+100+(Math.max(1,MS.length)+1)*RH+30+100+4*RH+40+150+110;
+  const cv=$('#cvT');cv.width=W;cv.height=H;const c=cv.getContext('2d');
+  c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);c.fillStyle='#ffffff';rrect(c,30,30,W-60,H-60,28);c.fill();
+  bandeau(c,W,'RÉCAPITULATIF GÉNÉRAL',MAGAL+' · arrêté le '+fd(today()));
+  const X0=70,X3=W-80;let y=390;
+  const tete=(t,a)=>{c.fillStyle='#14532d';c.font='800 28px "Bricolage Grotesque", sans-serif';c.fillText(t,X0,y+34);y+=50;
+    c.fillStyle='#e3f1e5';rrect(c,X0-10,y,W-2*X0+20,44,10);c.fill();c.fillStyle='#1f7a45';c.font='700 17px "Public Sans", sans-serif';
+    c.fillText(a[0],X0+6,y+29);c.textAlign='right';c.fillText(a[1],X3,y+29);c.textAlign='left';y+=50};
+  const ligne=(nom,v,tot,coul)=>{if(tot){c.fillStyle='#14532d';rrect(c,X0-10,y,W-2*X0+20,RH-6,12);c.fill()}
+    c.fillStyle=tot?'#ffffff':'#10261a';c.font=(tot?'700':'600')+' 24px "Public Sans", sans-serif';c.fillText(couper(c,nom,W-2*X0-300),X0+6,y+35);
+    c.font='600 24px "IBM Plex Mono", monospace';c.textAlign='right';c.fillStyle=tot?'#e9b730':(coul||'#14532d');c.fillText(v,X3,y+35);c.textAlign='left';
+    if(!tot){c.strokeStyle='#e1ede4';c.lineWidth=1;c.beginPath();c.moveTo(X0-10,y+RH-4);c.lineTo(W-X0+10,y+RH-4);c.stroke()}y+=RH};
+  tete('Cotisations par mois',['MOIS','REÇU']);
+  if(!MS.length){c.fillStyle='#5f7d68';c.font='500 22px "Public Sans", sans-serif';c.fillText('Aucune cotisation pour l\'instant.',X0+6,y+35);y+=RH}
+  MS.forEach(k=>ligne(mLong(k),F(totalMois(k))));
+  ligne('Total des cotisations ('+donne+' '+pl(donne,'membre','membres')+')',F(cot),1);
+  y+=30;tete('Caisse',['POSTE','MONTANT']);
+  ligne('Cotisations',F(cot));ligne('Jayante (dons)'+(mat?' + '+mat+' en matériel':''),F(jay));
+  ligne('Dépenses',dep?'− '+F(dep):F(0),0,dep?'#d9412f':null);ligne('En caisse',F(cot+jay-dep),1);
+  y+=40;c.fillStyle='#fdf1c9';rrect(c,X0-10,y,W-2*X0+20,150,18);c.fill();
+  c.fillStyle='#5f7d68';c.font='700 18px "Public Sans", sans-serif';c.fillText('PART DE CHAQUE MEMBRE',X0+20,y+44);c.fillText('PARTS COMPLÈTES',W/2+10,y+44);
+  c.fillStyle='#3a2a00';c.font='600 34px "IBM Plex Mono", monospace';c.fillText(F(OBJ),X0+20,y+92);c.fillStyle='#14532d';c.fillText(comp+' / '+M.length,W/2+10,y+92);
+  c.fillStyle='#36533f';c.font='500 19px "Public Sans", sans-serif';c.fillText('Pour l\'année, à verser quand vous voulez',X0+20,y+130);
+  y+=150+50;c.textAlign='center';c.fillStyle='#14532d';c.font='700 24px "Public Sans", sans-serif';
+  c.fillText('📲 '+NUMERO+' (Wave ou Orange Money) – '+TRESORIERE+', trésorière',W/2,y);c.textAlign='left';
+  return cv}
+async function montrerRecap(){if(!S.loaded){toast('Patientez : les chiffres chargent');return}const cv=await dessinerRecap();nomImage='recap-magal-saint-louis-'+today()+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()}
+$('#recap').onclick=montrerRecap;$('#recapAll').onclick=montrerRecap;
 
 // ---------- sauvegarde Excel (.xlsx fait ici, sans Internet) ----------
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
