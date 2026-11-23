@@ -573,7 +573,7 @@ function gs(fn,...a){
       .then(j=>{if(!j||!j.ok)throw new Error(j&&j.error||'Réponse invalide');return j.data})}
   return new Promise((res,rej)=>{
   google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(new Error(e&&e.message||String(e))))[fn](...a)})}
-function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=(d.membres||[]).filter(m=>!(typeof enCours!=='undefined'&&enCours&&enCours.has(m.id)));for(const t of (typeof ajouts!=='undefined'&&ajouts||[]))if(!S.membres.some(m=>m.nom===t.nom))S.membres.push(t);S.pay=d.pay||{};{const T=versements(d),ok=new Set(S.membres.map(m=>m.id));S.vers=T.filter(v=>ok.has(v.membre));S.orph=T.filter(v=>!ok.has(v.membre))}S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r)&&!estPrev(r)&&!estPres(r));S.pres=presences(R);S.prof=profils(R);S.prev=previsions(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));S.loaded=true;render();if(!deCache)nettoyer()}
+function appliquer(d,deCache){if(!d)return;if(!deCache){try{const c=Object.assign({},d,{membres:(d.membres||[]).map(m=>Object.assign({},m,{tel:''})),reu:(d.reu||[]).filter(r=>!estProf(r))});localStorage.setItem('sl_data',JSON.stringify(c))}catch(_){}}S.membres=(d.membres||[]).filter(m=>!(typeof enCours!=='undefined'&&enCours&&enCours.has(m.id)));for(const t of (typeof ajouts!=='undefined'&&ajouts||[]))if(!S.membres.some(m=>m.nom===t.nom))S.membres.push(t);S.pay=d.pay||{};{const T=versements(d),ok=new Set(S.membres.map(m=>m.id));S.vers=T.filter(v=>ok.has(v.membre));S.orph=T.filter(v=>!ok.has(v.membre))}S.nouveau=Array.isArray(d.vers);S.dep=d.dep||[];const R=d.reu||[];S.reu=R.filter(r=>!estJay(r)&&!estProf(r)&&!estPrev(r)&&!estPres(r));S.pres=presences(R);S.prof=profils(R);S.prev=previsions(R);S.jay=(Array.isArray(d.jay)?d.jay:[]).concat(R.filter(estJay).map(jayDeReu));for(const f of (typeof pend!=='undefined'&&pend||[]))try{f()}catch(_){}S.loaded=true;render();if(!deCache)nettoyer()}
 const api=(fn,...a)=>()=>gs(fn,TOKEN,...a).then(appliquer);
 function sortir(){TOKEN='';try{localStorage.removeItem('sl_tok')}catch(_){}S.write=false;S.membres.forEach(m=>m.tel='');render()}
 let gen=0,lect=0;
@@ -704,6 +704,16 @@ async function supprimerVersDe(ids){const V=S.vers.concat(S.orph||[]).filter(v=>
   return true}
 // Retirer un membre : il disparaît tout de suite de l'écran, le serveur finit le travail en arrière-plan
 var enCours=new Set(),ajouts=[],fileAjout=Promise.resolve();
+// Enregistrement rapide : l'écran change tout de suite, le serveur enregistre en arrière-plan (un après l'autre)
+var pend=[],fileBg=Promise.resolve(),attente=0;
+const req=(fn,...a)=>()=>gs(fn,TOKEN,...a);
+const tmpId=()=>'tmp_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
+function bg(appel,ok,local,apres){if(local){pend.push(local);try{local()}catch(_){}}
+  gen++;render();if(ok)toast(ok);attente++;
+  fileBg=fileBg.then(async()=>{try{const d=await appel();pend=pend.filter(x=>x!==local);appliquer(d);if(apres)apres()}
+    catch(e){pend=pend.filter(x=>x!==local);if(/SESSION/.test(e&&e.message)){sortir();status('Session expirée : reconnectez-vous comme trésorière.')}
+      else status('Pas enregistré ('+(e&&e.message||e)+'). Vérifiez la connexion et refaites-le.')}
+    finally{attente--;gen++;if(!attente)setTimeout(()=>charger(),1500);render()}})}
 async function retirerMembreTout(id){const pr=S.prof[id];
   const V=S.vers.concat(S.orph||[]).filter(v=>v.membre===id),vus=new Set();
   const etapes=[api('retirerMembre',id)];
@@ -744,7 +754,8 @@ $('#fJay').onsubmit=e=>{e.preventDefault();const don=$('#jDon').value.trim().rep
   if(!don)return;if(ty==='Somme'&&!(v>0)){status('Indiquez le montant de la somme reçue.');$('#jMt').focus();return}
   if(ty!=='Somme'&&!de){status('Décrivez le matériel ou le don (ex. : 5 sacs de riz).');$('#jDesc').focus();return}
   status('');$('#jDon').value='';$('#jMt').value='';$('#jDesc').value='';
-  save(api('ajouterReunion',today(),'',(JMARK+don).slice(0,80),[ty,v||'',de.replace(/\|/g,'/')].join('|').slice(0,120)),'Don ajouté')};
+  const lieu=(JMARK+don).slice(0,80),obj=[ty,v||'',de.replace(/\|/g,'/')].join('|').slice(0,120),tid=tmpId();
+  bg(req('ajouterReunion',today(),'',lieu,obj),'Don ajouté',()=>{S.jay=(S.jay||[]).concat(jayDeReu({id:tid,date:today(),heure:'',lieu,objet:obj}))})};
 $('#jayCopy').onclick=()=>{const J=(S.jay||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date)));
   copier([`🌙 *Sopey Seydina Al Hassan Salam — Siège ${GROUPE}*`,`🎁 *Jayante (dons)*`,'',...(J.length?J.map((j,i)=>`${i+1}. ${j.donateur} : ${j.type==='Somme'?N(j.montant)+' F':(j.description||j.type)+(+j.montant?' ('+N(j.montant)+' F)':'')}`):['Aucun don pour l\'instant.']),'',`💰 Total des sommes : *${F(jaySommes())}*`,jayMat().length?`📦 Matériels et autres : ${jayMat().length}`:'','','Jërëjëf à tous les donateurs 🤲'].filter((x,i,a)=>x!==''||a[i-1]!=='').join('\n'),'Liste copiée : collez-la sur WhatsApp')};
 
@@ -854,9 +865,10 @@ $('#rPtAdd').onclick=()=>{const i=ptAdd();if(i)i.focus();else toast('8 points au
 $('#fReu').onsubmit=async e=>{e.preventDefault();const d=$('#rDate').value,h=$('#rHeure').value,l=$('#rLieu').value.trim();if(!d||!l)return;
   const pts=[...document.querySelectorAll('#rPtsL input')].map(i=>i.value.trim().replace(/\s+/g,' ')).filter(Boolean),o=pts.join('\n');
   $('#rDate').value='';$('#rHeure').value='';$('#rLieu').value='';ptReset();
-  if(await save(api('ajouterReunion',d,h,l,o),'Réunion ajoutée')){
+  const tid=tmpId();
+  bg(req('ajouterReunion',d,h,l,o),'Réunion ajoutée',()=>{S.reu=S.reu.concat({id:tid,date:d,heure:h,lieu:l,objet:o})},()=>{
     const r=S.reu.filter(x=>x.date===d&&x.lieu===l).pop();
-    if(r&&String(r.objet||'').length<o.length)status('Attention : les points sont trop longs, une partie a été coupée. Écrivez des points plus courts (environ 120 caractères en tout), puis supprimez et refaites la réunion.')}};
+    if(r&&String(r.objet||'').length<o.length)status('Attention : les points sont trop longs, une partie a été coupée. Écrivez des points plus courts (environ 120 caractères en tout), puis supprimez et refaites la réunion.')})};
 
 // ---------- image de la réunion (à partager) ----------
 function lignesTexte(c,t,max){const mots=String(t).split(/\s+/),L=[];let cur='';mots.forEach(w=>{const x=cur?cur+' '+w:w;if(c.measureText(x).width>max&&cur){L.push(cur);cur=w}else cur=x});if(cur)L.push(cur);return L}
@@ -912,11 +924,12 @@ $('#cNo').onclick=()=>{$('#ovPay').hidden=true};
 $('#fPay').onsubmit=async e=>{e.preventDefault();const mid=$('#cMem').value,v=Math.round(+$('#cMt').value),k=$('#cMois').value,mode=modeChoisi;
   if(!mid){$('#cMem').focus();return}if(!(v>0)){$('#cMt').focus();return}
   const m=S.membres.find(x=>x.id===mid);$('#ovPay').hidden=true;
-  let fn=api('payer',mid,k,mode,v,today());
+  let fn=req('payer',mid,k,mode,v,today());
   // ancien Code.gs : un seul enregistrement par mois → on additionne
-  if(!S.nouveau&&P(mid,k)){const avant=+P(mid,k).montant||0;fn=()=>gs('annulerPaiement',TOKEN,mid,k).then(()=>gs('payer',TOKEN,mid,k,mode,avant+v,today())).then(appliquer)}
-  if(await save(fn,`${m.nom} : ${N(v)} F reçus par ${MODES[mode].l}`)){
-    const l=S.vers.filter(x=>x.membre===mid&&x.mois===k).sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(l.length)showRecu(l[l.length-1].id)}};
+  if(!S.nouveau&&P(mid,k)){const avant=+P(mid,k).montant||0;fn=()=>gs('annulerPaiement',TOKEN,mid,k).then(()=>gs('payer',TOKEN,mid,k,mode,avant+v,today()))}
+  const tid=tmpId(),dt=today();
+  bg(fn,`${m.nom} : ${N(v)} F reçus par ${MODES[mode].l} — le reçu arrive`,()=>{S.vers=S.vers.concat({id:tid,membre:mid,nom:m.nom,mois:k,mode,montant:v,date:dt})},()=>{
+    const l=S.vers.filter(x=>x.membre===mid&&x.mois===k).sort((a,b)=>String(a.id).localeCompare(String(b.id)));if(l.length)showRecu(l[l.length-1].id)})};
 
 // ---------- reçu ----------
 function rrect(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
@@ -991,7 +1004,7 @@ $('#fMem').onsubmit=async e=>{e.preventDefault();const pre=net($('#mPre').value)
     catch(e){status(nom+' n\'a pas pu être enregistré ('+(e&&e.message||e)+'). Ajoutez-le de nouveau.')}
     finally{ajouts=ajouts.filter(x=>x!==tmp);gen++;if(!ajouts.length)charger();else render()}})};
 $('#fDep').onsubmit=e=>{e.preventDefault();const ps=$('#dPoste').value,motif=((ps?ps+' · ':'')+$('#dMotif').value.trim()).slice(0,80),v=Math.round(+$('#dMontant').value);if(!$('#dMotif').value.trim()||!(v>0))return;
-  $('#dMotif').value='';$('#dMontant').value='';save(api('ajouterDepense',motif,v),'Dépense ajoutée')};
+  $('#dMotif').value='';$('#dMontant').value='';const tid=tmpId();bg(req('ajouterDepense',motif,v),'Dépense ajoutée',()=>{S.dep=S.dep.concat({id:tid,date:today(),motif,montant:v})})};
 
 // ---------- image du tableau ----------
 $('#tPhoto').src=$('#photoSeydina').src;
