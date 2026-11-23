@@ -435,6 +435,7 @@ form.add input.n,form.add select{flex:0 1 130px}
         <input id="mAdr" placeholder="Adresse (ex. : Pikine, Saint-Louis)" maxlength="60" autocomplete="off">
         <button class="btn pri" type="submit">Ajouter le membre</button>
       </form>
+      <div id="impBox"></div>
       <div id="memList"></div>
     </div>
   </section>
@@ -586,6 +587,7 @@ async function save(fn,ok,local){gen++;const avant=local?JSON.stringify({membres
   else status('Enregistrement impossible ('+(e&&e.message||e)+'). Réessayez.');return false}}
 
 const P=(mid,k)=>S.pay[mid+'__'+k];
+const alpha=()=>S.membres.slice().sort((a,b)=>a.nom.localeCompare(b.nom,'fr'));
 const numero=m=>pad(S.membres.indexOf(m)+1);
 const OBJ=19500; // part de chaque membre pour l'année
 // Jayante enregistré dans l'onglet « Réunions » (lieu commençant par JAYANTE ·), car le Code.gs ne peut pas être redéployé
@@ -665,7 +667,7 @@ window.addEventListener('popstate',e=>{if(ignorer){ignorer--;return}
 // ---------- suivi ----------
 function barre(t){const p=Math.min(100,Math.round(100*t/OBJ));return `<div class="obar"><i style="width:${p}%"${t>=OBJ?' class="full"':''}></i></div>`}
 function etat(t){return t>=OBJ?(t>OBJ?`✓ Part complète · +${N(t-OBJ)} F`:'✓ Part complète'):`Reste ${N(OBJ-t)} F`}
-function renderSuivi(){const M=S.membres,q=norm(S.q2);
+function renderSuivi(){const M=alpha(),q=norm(S.q2);
   $('#suiviLab').textContent=`Part de chaque membre : ${N(OBJ)} F`;
   if(!S.loaded){$('#suivi').innerHTML='<div class="empty">Chargement…</div>';return}
   if(!M.length){$('#suivi').innerHTML='<div class="empty">Aucun membre.</div>';return}
@@ -781,7 +783,7 @@ function texteRecap(){const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=tota
 
 // ---------- écran principal ----------
 function render(){
-  const k=S.mois,M=S.membres;
+  const k=S.mois,M=alpha();
   $('#mLab').textContent=mLong(k);
   $('#prev').disabled=k<=DEBUT;$('#next').disabled=k>=addM(CUR,11);
   const dep=totalDep(),tm=totalMois(k),PM=payesMois(k);
@@ -811,6 +813,7 @@ function render(){
   $('#memCount').textContent=M.length?M.length+' membres':'';
   $('#fMem').hidden=$('#fDep').hidden=$('#fReu').hidden=!S.write;
   $('#memList').innerHTML=M.length?M.map(m=>{const t=totalDe(m.id);return `<div class="line"><span class="av">${esc(ini(m.nom))}</span><div class="g"><b>${esc(m.nom)}</b><small>${m.tel?esc(m.tel)+' · ':''}${S.write&&S.prof[m.id]&&S.prof[m.id].adresse?esc(S.prof[m.id].adresse)+' · ':''}${N(t)} F donnés · ${etat(t)}</small></div>${S.write?`<button class="btn" type="button" data-bg="${esc(m.id)}">🪪 Badge</button><button class="btn link" type="button" data-del="${esc(m.id)}">Retirer</button>`:''}</div>`}).join(''):'<div class="empty">Aucun membre.</div>';
+  renderReprise();
   document.querySelectorAll('#memList [data-bg]').forEach(b=>b.onclick=()=>ouvrirBadge(b.dataset.bg));
   document.querySelectorAll('#memList [data-del]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.del,nv=versDe(id).length;
@@ -1262,7 +1265,7 @@ $('#bilanImg').onclick=async()=>{const cv=await dessinerBilan();nomImage='bilan-
 async function dessinerRecap(){try{await document.fonts.ready}catch(_){}
   const M=S.membres,cot=totalRecu(),jay=jaySommes(),dep=totalDep(),mat=jayMat().length,MS=moisListe().filter(k=>totalMois(k));
   const donne=new Set(S.vers.map(v=>v.membre)).size,comp=M.filter(m=>totalDe(m.id)>=OBJ).length;
-  const MC=M.map(m=>({m,t:totalDe(m.id)})).filter(x=>x.t>0).sort((a,b)=>b.t-a.t||a.m.nom.localeCompare(b.m.nom,'fr'));
+  const MC=M.map(m=>({m,t:totalDe(m.id)})).filter(x=>x.t>0).sort((a,b)=>a.m.nom.localeCompare(b.m.nom,'fr'));
   const W=1080,RH=56,H=390+100+(Math.max(1,MC.length)+1)*RH+30+100+(Math.max(1,MS.length)+1)*RH+30+100+4*RH+40+150+110;
   const cv=$('#cvT');cv.width=W;cv.height=H;const c=cv.getContext('2d');
   c.fillStyle='#eef6ef';c.fillRect(0,0,W,H);c.fillStyle='#ffffff';rrect(c,30,30,W-60,H-60,28);c.fill();
@@ -1295,6 +1298,40 @@ async function dessinerRecap(){try{await document.fonts.ready}catch(_){}
   return cv}
 async function montrerRecap(){if(!S.loaded){toast('Patientez : les chiffres chargent');return}const cv=await dessinerRecap();nomImage='recap-magal-saint-louis-'+today()+'.png';$('#tabImg').src=cv.toDataURL('image/png');$('#ovTab').hidden=false;$('#tabClose').focus()}
 $('#recap').onclick=montrerRecap;$('#recapAll').onclick=montrerRecap;
+
+// ---------- reprise des cotisations de septembre et octobre 2026 (listes WhatsApp) ----------
+// [nom, autres façons d'écrire le nom, septembre, octobre]
+var REPRISE=[
+ ['Amary Gueye',[],1600,1600],['Khady Ba',[],1600,2000],['Bay Youssou Dieye',['Bay Youssou'],1600,1600],
+ ['Abdou Ka Diongue',[],3200,3200],['Adja Seynabou Sow',[],3200,3200],['Al Hassan Salam Diongue',[],3200,3200],
+ ['Mouhamadou Fadel Diongue',['Mouhamed Fadel Diongue','Mouhamed Fadel Diongue'],3200,3200],['Seynabou Salam Diongue',[],3200,3200],
+ ['Adja Khadidiatou Diongue',[],3200,3200],['Makha Niang',[],1600,0],['Seydina Ilias Sidibé',[],1600,1600],['Sara Ndiaye',[],1600,1600],
+ ['Boubacar Fall',[],1600,1600],['Oumy Ndiaye',[],2000,2000],['Sopey Bou Bax',[],1600,1600],['Awa Cheikh Diop',[],1600,1600],
+ ['Ndeye Khady Niang',[],1600,2000],['Ndeye Sall',[],15000,15000],['Ndeye Sokhna Ba',[],2000,2000],['Amadou Sow',[],1600,1600],
+ ['Sokhna Adama Lamp Fall',['Adama Lamp Fall'],2000,2000],['Fatma Sidibé',[],1600,2000],['Al Hassan Salam Seck Senior',[],1600,1600],
+ ['Awa Diop',[],5000,0],['Modou Fall',[],0,1600],['Modou Diop Taif',[],0,5000],['Mbaye Fall',[],0,5000],['Aminata Ba',[],0,4000],
+ ['Siny Gueye',[],0,1600],['Bassirou Thiam',[],0,5000],['Fatou Diop',[],0,5000],['Cheikh Ndiaye',[],0,3200]];
+var cleNom=s=>norm(s).replace(/[^a-z0-9]+/g,' ').trim();
+function membreReprise(r){const c=[r[0]].concat(r[1]).map(cleNom);return S.membres.find(m=>c.includes(cleNom(m.nom)))}
+function resteReprise(){const t=[];REPRISE.forEach(r=>{const m=membreReprise(r);if(!m)t.push({r,membre:1});
+  [['2026-09',r[2]],['2026-10',r[3]]].forEach(([k,v])=>{if(v&&!(m&&S.vers.some(x=>x.membre===m.id&&x.mois===k)))t.push({r,k,v})})});return t}
+var reprise=false;
+function renderReprise(){const b=$('#impBox');if(!b)return;if(!S.write||!S.loaded||!REPRISE){b.innerHTML='';return}
+  if(reprise){b.innerHTML=`<div class="hint" style="margin:0 0 10px;padding:10px 12px;border:1px solid var(--sun);background:var(--sun-soft);border-radius:12px;color:var(--ink)">⏳ Reprise en cours : <b id="impN">${reprise}</b>. Laissez l'application ouverte.</div>`;return}
+  const t=resteReprise();if(!t.length){b.innerHTML='';return}
+  const nm=t.filter(x=>x.membre).length,nv=t.length-nm;
+  b.innerHTML=`<div class="hint" style="margin:0 0 10px;padding:10px 12px;border:1px solid var(--sun);background:var(--sun-soft);border-radius:12px;color:var(--ink)">📥 <b>Cotisations de septembre et octobre 2026</b> à mettre dans l'application : ${nm?nm+' '+pl(nm,'membre','membres')+' à ajouter et ':''}${nv} ${pl(nv,'versement','versements')}.<br><button class="btn pri" type="button" id="impGo" style="margin-top:8px">Mettre ces cotisations</button></div>`;
+  $('#impGo').onclick=lancerReprise}
+async function lancerReprise(){const t=resteReprise(),tot=t.length;let i=0;reprise='0 / '+tot;nettoie=true;gen++;renderReprise();
+  try{
+    for(const r of REPRISE){let m=membreReprise(r);
+      if(!m){await api('ajouterMembre',r[0],'',MONTANT,DEBUT)();i++;reprise=i+' / '+tot;gen++;renderReprise();m=membreReprise(r);if(!m)throw new Error(r[0]+' non ajouté')}
+      for(const [k,v,d] of [['2026-09',r[2],'2026-09-30'],['2026-10',r[3],'2026-10-31']]){
+        if(!v||S.vers.some(x=>x.membre===m.id&&x.mois===k))continue;
+        await api('payer',m.id,k,'wave',v,d)();i++;reprise=i+' / '+tot;gen++;renderReprise()}}
+    reprise=false;toast('Cotisations de septembre et octobre mises : '+i+' enregistrements')}
+  catch(e){reprise=false;status('Reprise arrêtée ('+(e&&e.message||e)+'). Appuyez de nouveau sur le bouton : elle reprend où elle s\'est arrêtée.')}
+  finally{nettoie=false;gen++;render();charger()}}
 
 // ---------- sauvegarde Excel (.xlsx fait ici, sans Internet) ----------
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
